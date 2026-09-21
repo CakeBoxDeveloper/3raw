@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PARTS — Match 3</title>
+<title>ДЕТАЛИ — Match 3</title>
 <style>
 /* ── Reset & tokens ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,7 +18,7 @@
   --accent-lo: rgba(200,168,75,0.12);
   --text:      rgba(255,255,255,0.90);
   --text-dim:  rgba(255,255,255,0.35);
-  --radius:    10px;
+  --radius:    3px;
   --gap:       3px;
 }
 
@@ -27,7 +27,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
   font-family: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
   color: var(--text);
   overflow: hidden;
@@ -39,21 +40,22 @@ body {
 /* ── Layout shell ───────────────────────────────────────────── */
 .shell {
   width: 100%;
-  max-width: 440px;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0;
-  padding: 14px 12px 8px;
+  padding: 10px 10px 6px;
   flex: 1;
+  min-height: 0;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
 .hdr {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 14px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -89,24 +91,25 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .diff-bar {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 3px;
+  padding: 2px;
 }
 
 .diff-btn {
   flex: 1;
   padding: 5px 4px;
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-dim);
   font-size: 0.6rem;
@@ -168,18 +171,26 @@ body {
 
 /* ── Board wrapper ──────────────────────────────────────────── */
 .board-wrap {
-  position: relative;  /* для шиммер-оверлея */
+  position: relative;
   flex: 1;
   min-height: 0;
+  /* Поле квадратное по меньшей стороне доступного пространства */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #board {
   display: grid;
   gap: var(--gap);
-  width: 100%;
+  /* Занимаем минимум из ширины и доступной высоты */
+  width: min(100%, 100cqb);
   aspect-ratio: 1 / 1;
-  max-height: calc(100dvh - 160px);
+  max-width: 100%;
+  max-height: 100%;
   perspective: 800px;
+  /* Ограничение через container query не поддерживается везде,
+     поэтому используем JS для точного размера */
 }
 
 /* ── Cell ───────────────────────────────────────────────────── */
@@ -198,43 +209,6 @@ body {
   will-change: transform, box-shadow;
   transition: box-shadow 0.1s, border-color 0.1s;
 }
-
-/* цветовая полоска снизу как идентификатор типа */
-.cell::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 8%; right: 8%;
-  height: 2px;
-  border-radius: 1px;
-  opacity: 0.7;
-  z-index: 3;
-}
-.gem-1::after  { background: #e05252; }
-.gem-2::after  { background: #4a9ede; }
-.gem-3::after  { background: #4ecc7a; }
-.gem-4::after  { background: #e8a830; }
-.gem-5::after  { background: #a86cd4; }
-.gem-6::after  { background: #30c4a8; }
-.gem-7::after  { background: #e8407a; }
-.gem-8::after  { background: #e87830; }
-.gem-9::after  { background: #30bcd8; }
-.gem-10::after { background: #e84040; }
-.gem-11::after { background: #6878d0; }
-.gem-12::after { background: #68c870; }
-
-/* лёгкий бордер под цвет типа */
-.gem-1  { border-color: rgba(224, 82, 82,  0.28); }
-.gem-2  { border-color: rgba( 74,158,222,  0.28); }
-.gem-3  { border-color: rgba( 78,204,122,  0.28); }
-.gem-4  { border-color: rgba(232,168, 48,  0.28); }
-.gem-5  { border-color: rgba(168,108,212,  0.28); }
-.gem-6  { border-color: rgba( 48,196,168,  0.28); }
-.gem-7  { border-color: rgba(232, 64,122,  0.28); }
-.gem-8  { border-color: rgba(232,120, 48,  0.28); }
-.gem-9  { border-color: rgba( 48,188,216,  0.28); }
-.gem-10 { border-color: rgba(232, 64, 64,  0.28); }
-.gem-11 { border-color: rgba(104,120,208,  0.28); }
-.gem-12 { border-color: rgba(104,200,112,  0.28); }
 
 .cell img {
   width: 78%;
@@ -562,22 +536,22 @@ footer {
 <div class="shell">
 
   <div class="hdr">
-    <span class="logo">Parts</span>
+    <span class="logo">Детали</span>
     <div class="score-block">
-      <div class="score-label">Score</div>
+      <div class="score-label">Очки</div>
       <div id="score">0</div>
     </div>
   </div>
 
   <div class="controls">
     <div class="diff-bar">
-      <button class="diff-btn active" data-diff="easy"   onclick="setDifficulty('easy')">Easy</button>
-      <button class="diff-btn"        data-diff="normal"  onclick="setDifficulty('normal')">Normal</button>
-      <button class="diff-btn"        data-diff="hard"    onclick="setDifficulty('hard')">Hard</button>
-      <button class="diff-btn"        data-diff="expert"  onclick="setDifficulty('expert')">Expert</button>
+      <button class="diff-btn active" data-diff="easy"   onclick="setDifficulty('easy')">Легко</button>
+      <button class="diff-btn"        data-diff="normal"  onclick="setDifficulty('normal')">Норма</button>
+      <button class="diff-btn"        data-diff="hard"    onclick="setDifficulty('hard')">Сложно</button>
+      <button class="diff-btn"        data-diff="expert"  onclick="setDifficulty('expert')">Эксперт</button>
     </div>
     <div class="hint-control">
-      <span class="hint-label">Hint</span>
+      <span class="hint-label">Подсказка</span>
       <label class="toggle">
         <input type="checkbox" id="hint-toggle" checked onchange="onHintToggle()">
         <span class="toggle-track"></span>
@@ -592,11 +566,11 @@ footer {
   <div class="scraper-bar">
     <button id="scraper-btn" onclick="toggleScraper()">
       <span class="scraper-icon"></span>
-      Scraper
+      Скребок
     </button>
   </div>
 
-  <footer>Tap or swipe to swap</footer>
+  <footer>Свайп или тап — меняй соседей</footer>
 
 </div><!-- .shell -->
 
@@ -673,6 +647,18 @@ const comboToast = document.getElementById('combo-toast');
 const comboVal   = document.getElementById('combo-value');
 const noMovesEl  = document.getElementById('no-moves');
 // (hint overlay removed — shimmer is applied directly to cells)
+
+// ── Размер поля: квадрат по минимальной доступной стороне ─────
+function fitBoard() {
+  const wrap = boardEl.parentElement;
+  const wrapW = wrap.clientWidth;
+  const wrapH = wrap.clientHeight;
+  const size  = Math.min(wrapW, wrapH);
+  boardEl.style.width  = size + 'px';
+  boardEl.style.height = size + 'px';
+}
+window.addEventListener('resize', fitBoard);
+// вызов после init()
 
 // ═══════════════════════════════════════════════════════════════
 //  INIT
@@ -1293,6 +1279,7 @@ boardEl.addEventListener('pointerup', (e) => {
 
 // ── Start ──
 init();
+fitBoard();
 </script>
 </body>
 </html>
