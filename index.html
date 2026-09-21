@@ -44,9 +44,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 10px 10px 6px;
+  padding: 8px 8px 4px;
   flex: 1;
   min-height: 0;
+  height: 100dvh;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -54,7 +55,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-shrink: 0;
 }
 
@@ -91,7 +92,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-shrink: 0;
 }
 
@@ -174,28 +175,19 @@ body {
   position: relative;
   flex: 1;
   min-height: 0;
-  /* Поле квадратное по меньшей стороне доступного пространства */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
 }
 
 #board {
   display: grid;
   gap: var(--gap);
-  /* Занимаем минимум из ширины и доступной высоты */
-  width: min(100%, 100cqb);
-  aspect-ratio: 1 / 1;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   perspective: 800px;
-  /* Ограничение через container query не поддерживается везде,
-     поэтому используем JS для точного размера */
 }
 
 /* ── Cell ───────────────────────────────────────────────────── */
 .cell {
-  aspect-ratio: 1 / 1;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
@@ -208,11 +200,14 @@ body {
   transform-style: preserve-3d;
   will-change: transform, box-shadow;
   transition: box-shadow 0.1s, border-color 0.1s;
+  min-width: 0;
+  min-height: 0;
 }
 
 .cell img {
-  width: 78%;
-  height: 78%;
+  height: 72%;
+  width: auto;
+  max-width: 88%;
   object-fit: contain;
   pointer-events: none;
   filter: brightness(1.6) contrast(1.05);
@@ -439,7 +434,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 0 2px;
+  padding: 5px 0 2px;
   flex-shrink: 0;
 }
 
@@ -521,13 +516,14 @@ body {
 
 /* ── Footer ──────────────────────────────────────────────────── */
 footer {
-  margin-top: 8px;
-  font-size: 0.52rem;
-  letter-spacing: 0.1em;
+  margin-top: 4px;
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-dim);
   text-align: center;
   flex-shrink: 0;
+  padding-bottom: 4px;
 }
 </style>
 </head>
@@ -597,10 +593,10 @@ footer {
 //  CONFIG
 // ═══════════════════════════════════════════════════════════════
 const DIFFICULTIES = {
-  easy:   { cols: 7, rows: 7, gemTypes: 5  },
-  normal: { cols: 8, rows: 8, gemTypes: 7  },
-  hard:   { cols: 8, rows: 8, gemTypes: 9  },
-  expert: { cols: 9, rows: 9, gemTypes: 12 },
+  easy:   { cols: 5, rows: 7,  gemTypes: 5  },
+  normal: { cols: 6, rows: 8,  gemTypes: 7  },
+  hard:   { cols: 7, rows: 9,  gemTypes: 9  },
+  expert: { cols: 8, rows: 10, gemTypes: 12 },
 };
 
 const ALL_IMGS = [
@@ -648,18 +644,6 @@ const comboVal   = document.getElementById('combo-value');
 const noMovesEl  = document.getElementById('no-moves');
 // (hint overlay removed — shimmer is applied directly to cells)
 
-// ── Размер поля: квадрат по минимальной доступной стороне ─────
-function fitBoard() {
-  const wrap = boardEl.parentElement;
-  const wrapW = wrap.clientWidth;
-  const wrapH = wrap.clientHeight;
-  const size  = Math.min(wrapW, wrapH);
-  boardEl.style.width  = size + 'px';
-  boardEl.style.height = size + 'px';
-}
-window.addEventListener('resize', fitBoard);
-// вызов после init()
-
 // ═══════════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════════
@@ -689,6 +673,7 @@ function init() {
   scoreEl.textContent = '0';
   noMovesEl.classList.remove('visible');
   boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+  boardEl.style.gridTemplateRows    = `repeat(${ROWS}, 1fr)`;
 
   hideHint();
   do { board = createBoard(); }
@@ -1279,7 +1264,6 @@ boardEl.addEventListener('pointerup', (e) => {
 
 // ── Start ──
 init();
-fitBoard();
 </script>
 </body>
 </html>
