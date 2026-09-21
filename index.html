@@ -3,298 +3,530 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Три в ряд — Детали</title>
+<title>PARTS — Match 3</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset & tokens ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: #0f0f1a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100dvh;
-    font-family: 'Segoe UI', sans-serif;
-    color: #fff;
-    overflow: hidden;
-    user-select: none;
-    touch-action: none;
-  }
+:root {
+  --bg:        #0c0c10;
+  --surface:   #14141c;
+  --surface2:  #1c1c28;
+  --border:    rgba(255,255,255,0.07);
+  --border-hi: rgba(255,255,255,0.18);
+  --accent:    #c8a84b;
+  --accent-lo: rgba(200,168,75,0.12);
+  --text:      rgba(255,255,255,0.90);
+  --text-dim:  rgba(255,255,255,0.35);
+  --radius:    10px;
+  --gap:       3px;
+}
 
-  /* ── Header ── */
-  header {
-    width: 100%;
-    max-width: 480px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px 6px;
-    flex-shrink: 0;
-  }
-  h1 { font-size: 1.1rem; letter-spacing: 1px; color: #e0c97f; }
-  #score-box { text-align: right; }
-  #score-label { font-size: 0.6rem; color: #777; text-transform: uppercase; letter-spacing: 1px; }
-  #score { font-size: 1.4rem; font-weight: bold; color: #e0c97f; }
+body {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  font-family: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  /* ── Difficulty bar ── */
-  #diff-bar {
-    display: flex;
-    gap: 6px;
-    padding: 0 14px 6px;
-    width: 100%;
-    max-width: 480px;
-    flex-shrink: 0;
-  }
-  .diff-btn {
-    flex: 1;
-    padding: 5px 2px;
-    border: 1.5px solid #333;
-    border-radius: 8px;
-    background: #1a1a2e;
-    color: #888;
-    font-size: 0.65rem;
-    font-weight: bold;
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-  }
-  .diff-btn.active {
-    background: #e0c97f;
-    color: #1a1a2e;
-    border-color: #e0c97f;
-  }
+/* ── Layout shell ───────────────────────────────────────────── */
+.shell {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 14px 12px 8px;
+  flex: 1;
+}
 
-  /* ── Board ── */
-  #board-wrap {
-    width: min(100vw, 480px);
-    padding: 4px;
-    flex-shrink: 0;
-  }
-  #board {
-    display: grid;
-    gap: 3px;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    perspective: 700px;
-  }
+/* ── Header ─────────────────────────────────────────────────── */
+.hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
 
-  /* ── Cell ── */
-  .cell {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    cursor: pointer;
-    position: relative;
-    overflow: visible;
-    transform-style: preserve-3d;
-    will-change: transform, box-shadow;
-    transition: box-shadow 0.1s;
-    background: #1e2235;
-    border: 1px solid #ffffff18;
-  }
+.logo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
 
-  /* фон-цвет как тинт под картинку */
-  .gem-1  { background: #2a1a1a; border-color: #e74c3c44; }
-  .gem-2  { background: #1a1f2a; border-color: #3498db44; }
-  .gem-3  { background: #1a2a1a; border-color: #2ecc7144; }
-  .gem-4  { background: #2a2218; border-color: #f39c1244; }
-  .gem-5  { background: #221a2a; border-color: #9b59b644; }
-  .gem-6  { background: #1a2a27; border-color: #1abc9c44; }
-  .gem-7  { background: #2a1a24; border-color: #e91e6344; }
-  .gem-8  { background: #2a261a; border-color: #ff980044; }
-  .gem-9  { background: #1a2628; border-color: #00bcd444; }
-  .gem-10 { background: #261a1a; border-color: #f4433644; }
-  .gem-11 { background: #1a1e28; border-color: #5c6bc044; }
-  .gem-12 { background: #1e261a; border-color: #66bb6a44; }
+.score-block {
+  text-align: right;
+  line-height: 1;
+}
+.score-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+#score {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  line-height: 1;
+}
 
-  /* dot-color indicator (маленький кружок в углу — чтобы различать при мелких ячейках) */
-  .cell::after {
-    content: '';
-    position: absolute;
-    bottom: 3px; right: 3px;
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    opacity: 0.7;
-  }
-  .gem-1::after  { background: #e74c3c; }
-  .gem-2::after  { background: #3498db; }
-  .gem-3::after  { background: #2ecc71; }
-  .gem-4::after  { background: #f39c12; }
-  .gem-5::after  { background: #9b59b6; }
-  .gem-6::after  { background: #1abc9c; }
-  .gem-7::after  { background: #e91e63; }
-  .gem-8::after  { background: #ff9800; }
-  .gem-9::after  { background: #00bcd4; }
-  .gem-10::after { background: #f44336; }
-  .gem-11::after { background: #5c6bc0; }
-  .gem-12::after { background: #66bb6a; }
+/* ── Controls ───────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
 
-  .cell img {
-    width: 80%;
-    height: 80%;
-    object-fit: contain;
-    pointer-events: none;
-    filter: drop-shadow(0 2px 4px #0008);
-  }
-  .cell .num {
-    font-size: clamp(0.4rem, 1.8vw, 0.7rem);
-    opacity: 0.5;
-    line-height: 1;
-    pointer-events: none;
-    position: absolute;
-    top: 2px; left: 4px;
-  }
-  .cell .emoji {
-    font-size: clamp(0.9rem, 3.5vw, 1.4rem);
-    line-height: 1;
-    pointer-events: none;
-  }
+.diff-bar {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+}
 
-  .cell.selected {
-    box-shadow: 0 0 0 2.5px #fff, 0 6px 18px #0009;
-    transform: scale(1.1) translateZ(6px);
-    z-index: 2;
-  }
+.diff-btn {
+  flex: 1;
+  padding: 5px 4px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+.diff-btn.active {
+  background: var(--accent);
+  color: #0c0c10;
+}
 
-  /* призрак во время полёта */
-  .cell.swap-ghost {
-    opacity: 0.12;
-    pointer-events: none;
-  }
+/* hint toggle */
+.hint-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.hint-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
 
-  /* ── Flying card (абсолютный клон) ── */
-  .flying-card {
-    position: fixed;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    pointer-events: none;
-    z-index: 1000;
-    will-change: transform, box-shadow, filter;
-    transform-style: preserve-3d;
-    border: 1px solid #ffffff22;
-    overflow: hidden;
-  }
-  .flying-card img   { width: 80%; height: 80%; object-fit: contain; filter: drop-shadow(0 2px 4px #0008); }
-  .flying-card .num  { font-size: clamp(0.4rem, 1.8vw, 0.7rem); opacity: 0.5; position: absolute; top: 2px; left: 4px; }
-  .flying-card .emoji{ font-size: clamp(0.9rem, 3.5vw, 1.4rem); }
+/* pill toggle */
+.toggle { position: relative; width: 32px; height: 17px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.toggle-track::before {
+  content: '';
+  position: absolute;
+  width: 11px; height: 11px;
+  left: 2px; top: 2px;
+  background: var(--text-dim);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle input:checked + .toggle-track {
+  background: var(--accent-lo);
+  border-color: var(--accent);
+}
+.toggle input:checked + .toggle-track::before {
+  transform: translateX(15px);
+  background: var(--accent);
+}
 
-  /* ── Animations ── */
-  .cell.matched {
-    animation: pop 0.32s ease forwards;
-    pointer-events: none;
-  }
-  .cell.fall-in {
-    animation: fall 0.28s ease forwards;
-  }
-  @keyframes pop {
-    0%   { transform: scale(1);   opacity: 1; }
-    40%  { transform: scale(1.25);opacity: 0.7; filter: brightness(2); }
-    100% { transform: scale(0);   opacity: 0; }
-  }
-  @keyframes fall {
-    0%   { transform: translateY(-50px); opacity: 0; }
-    100% { transform: translateY(0);     opacity: 1; }
-  }
+/* ── Board wrapper ──────────────────────────────────────────── */
+.board-wrap {
+  position: relative;  /* для шиммер-оверлея */
+  flex: 1;
+  min-height: 0;
+}
 
-  /* ── Combo banner ── */
-  #combo-banner {
-    position: fixed;
-    top: 28%;
-    left: 50%;
-    transform: translateX(-50%) scale(0);
-    background: #e0c97f;
-    color: #1a1a2e;
-    font-size: 1.3rem;
-    font-weight: bold;
-    padding: 7px 22px;
-    border-radius: 18px;
-    pointer-events: none;
-    z-index: 500;
-    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), opacity 0.18s;
-    opacity: 0;
-  }
-  #combo-banner.show {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
+#board {
+  display: grid;
+  gap: var(--gap);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: calc(100dvh - 160px);
+  perspective: 800px;
+}
 
-  /* ── No moves overlay ── */
-  #no-moves {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #000a;
-    align-items: center;
-    justify-content: center;
-    z-index: 300;
-    flex-direction: column;
-    gap: 14px;
-    backdrop-filter: blur(4px);
-  }
-  #no-moves.visible { display: flex; }
-  #no-moves p { font-size: 1.3rem; color: #e0c97f; text-align: center; padding: 0 24px; }
-  #no-moves button {
-    padding: 11px 30px;
-    background: #e0c97f;
-    color: #1a1a2e;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-  }
+/* ── Cell ───────────────────────────────────────────────────── */
+.cell {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow;
+  transition: box-shadow 0.1s, border-color 0.1s;
+}
 
-  footer {
-    margin-top: 6px;
-    font-size: 0.6rem;
-    color: #444;
-    flex-shrink: 0;
-  }
+/* цветовая полоска снизу как идентификатор типа */
+.cell::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 8%; right: 8%;
+  height: 2px;
+  border-radius: 1px;
+  opacity: 0.7;
+  z-index: 3;
+}
+.gem-1::after  { background: #e05252; }
+.gem-2::after  { background: #4a9ede; }
+.gem-3::after  { background: #4ecc7a; }
+.gem-4::after  { background: #e8a830; }
+.gem-5::after  { background: #a86cd4; }
+.gem-6::after  { background: #30c4a8; }
+.gem-7::after  { background: #e8407a; }
+.gem-8::after  { background: #e87830; }
+.gem-9::after  { background: #30bcd8; }
+.gem-10::after { background: #e84040; }
+.gem-11::after { background: #6878d0; }
+.gem-12::after { background: #68c870; }
+
+/* лёгкий бордер под цвет типа */
+.gem-1  { border-color: rgba(224, 82, 82,  0.28); }
+.gem-2  { border-color: rgba( 74,158,222,  0.28); }
+.gem-3  { border-color: rgba( 78,204,122,  0.28); }
+.gem-4  { border-color: rgba(232,168, 48,  0.28); }
+.gem-5  { border-color: rgba(168,108,212,  0.28); }
+.gem-6  { border-color: rgba( 48,196,168,  0.28); }
+.gem-7  { border-color: rgba(232, 64,122,  0.28); }
+.gem-8  { border-color: rgba(232,120, 48,  0.28); }
+.gem-9  { border-color: rgba( 48,188,216,  0.28); }
+.gem-10 { border-color: rgba(232, 64, 64,  0.28); }
+.gem-11 { border-color: rgba(104,120,208,  0.28); }
+.gem-12 { border-color: rgba(104,200,112,  0.28); }
+
+.cell img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: brightness(1.6) contrast(1.05);
+  position: relative;
+  z-index: 1;
+}
+.cell .emoji {
+  font-size: clamp(0.9rem, 3vw, 1.4rem);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cell.selected {
+  border-color: var(--border-hi);
+  box-shadow: 0 0 0 1.5px var(--accent), 0 6px 20px rgba(0,0,0,0.5);
+  transform: scale(1.08) translateZ(4px);
+  z-index: 10;
+}
+.cell.swap-ghost {
+  opacity: 0.1;
+  pointer-events: none;
+}
+.cell.matched {
+  animation: pop 0.28s ease forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ── Shimmer on individual hint cells ───────────────────────────
+   Класс .hint добавляется двум конкретным ячейкам.
+   ::before — скользящий блик (overflow:hidden на .cell клипирует его).
+   ::after  — цветная полоска-маркер внизу (не трогаем).
+─────────────────────────────────────────────────────────────── */
+@keyframes cell-shimmer {
+  0%   { transform: translateX(-200%) skewX(-12deg); }
+  100% { transform: translateX(200%)  skewX(-12deg); }
+}
+@keyframes hint-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.10); }
+  50%       { box-shadow: 0 0 0 2px rgba(255,255,255,0.30), 0 0 14px rgba(255,255,255,0.07); }
+}
+
+.cell.hint {
+  border-color: rgba(255,255,255,0.30) !important;
+  animation: hint-pulse 1.8s ease-in-out infinite;
+  /* flat чтобы ::before нормально лежал поверх содержимого */
+  transform-style: flat;
+}
+
+.cell.hint::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent  15%,
+    rgba(255,255,255,0.20) 50%,
+    transparent  85%
+  );
+  animation: cell-shimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes pop {
+  0%   { transform: scale(1);    opacity: 1; }
+  40%  { transform: scale(1.2);  opacity: 0.6; filter: brightness(3); }
+  100% { transform: scale(0);    opacity: 0; }
+}
+
+@keyframes fall-smooth {
+  0%   { transform: translateY(var(--fall-from, -60px)); opacity: 0; }
+  65%  { opacity: 1; }
+  82%  { transform: translateY(3px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.cell.fall-in {
+  animation: fall-smooth 0.38s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ── Flying card ─────────────────────────────────────────────── */
+.flying-card {
+  position: fixed;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2000;
+  will-change: transform, box-shadow;
+  transform-style: preserve-3d;
+  background: var(--surface2);
+  border: 1px solid var(--border-hi);
+  overflow: hidden;
+}
+.flying-card img {
+  width: 78%; height: 78%;
+  object-fit: contain;
+  filter: brightness(1.6) contrast(1.05);
+}
+.flying-card .emoji { font-size: clamp(0.9rem,3vw,1.4rem); }
+
+/* ── Combo toast ─────────────────────────────────────────────── */
+@keyframes toast-in {
+  0%   { transform: translateX(-50%) translateY(-110%); opacity: 0; }
+  60%  { transform: translateX(-50%) translateY(4px);   opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0);     opacity: 1; }
+}
+@keyframes toast-out {
+  0%   { transform: translateX(-50%) translateY(0);      opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-110%);  opacity: 0; }
+}
+
+#combo-toast {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-110%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 600;
+
+  /* стекло */
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  white-space: nowrap;
+}
+#combo-toast.show {
+  animation: toast-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+#combo-toast.hide {
+  animation: toast-out 0.24s ease-in forwards;
+}
+
+.combo-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1;
+}
+.combo-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  line-height: 1;
+}
+/* тонкая разделительная черта между лейблом и числом */
+.combo-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+/* ── No-moves modal ──────────────────────────────────────────── */
+#no-moves {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(12,12,16,0.82);
+  align-items: center; justify-content: center;
+  z-index: 400;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#no-moves.visible { display: flex; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 16px;
+  padding: 28px 28px 24px;
+  width: min(320px, 88vw);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.modal-sub {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: -12px;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-primary {
+  flex: 1;
+  padding: 11px;
+  background: var(--accent);
+  color: #0c0c10;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+footer {
+  margin-top: 8px;
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  flex-shrink: 0;
+}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>⚙️ Детали</h1>
-  <div id="score-box">
-    <div id="score-label">Очки</div>
-    <div id="score">0</div>
+<div class="shell">
+
+  <div class="hdr">
+    <span class="logo">Parts</span>
+    <div class="score-block">
+      <div class="score-label">Score</div>
+      <div id="score">0</div>
+    </div>
   </div>
-</header>
 
-<div id="diff-bar">
-  <button class="diff-btn active" data-diff="easy"   onclick="setDifficulty('easy')">Легко</button>
-  <button class="diff-btn"        data-diff="normal"  onclick="setDifficulty('normal')">Норма</button>
-  <button class="diff-btn"        data-diff="hard"    onclick="setDifficulty('hard')">Сложно</button>
-  <button class="diff-btn"        data-diff="expert"  onclick="setDifficulty('expert')">Эксперт</button>
+  <div class="controls">
+    <div class="diff-bar">
+      <button class="diff-btn active" data-diff="easy"   onclick="setDifficulty('easy')">Easy</button>
+      <button class="diff-btn"        data-diff="normal"  onclick="setDifficulty('normal')">Normal</button>
+      <button class="diff-btn"        data-diff="hard"    onclick="setDifficulty('hard')">Hard</button>
+      <button class="diff-btn"        data-diff="expert"  onclick="setDifficulty('expert')">Expert</button>
+    </div>
+    <div class="hint-control">
+      <span class="hint-label">Hint</span>
+      <label class="toggle">
+        <input type="checkbox" id="hint-toggle" checked onchange="onHintToggle()">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board"></div>
+  </div>
+
+  <footer>Tap or swipe to swap</footer>
+
+</div><!-- .shell -->
+
+<!-- combo toast -->
+<div id="combo-toast">
+  <span class="combo-label">Combo</span>
+  <span class="combo-divider"></span>
+  <span class="combo-value" id="combo-value">x2</span>
 </div>
 
-<div id="board-wrap">
-  <div id="board"></div>
-</div>
-
-<div id="combo-banner"></div>
-
+<!-- no moves modal -->
 <div id="no-moves">
-  <p>Нет доступных ходов!</p>
-  <button onclick="shuffleBoard()">Перемешать</button>
+  <div class="modal-box">
+    <div class="modal-title">No moves left</div>
+    <div class="modal-sub">The board will be reshuffled. Your score is kept.</div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="shuffleBoard()">Reshuffle</button>
+    </div>
+  </div>
 </div>
-
-<footer>Тап или свайп — меняй соседей</footer>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// НАСТРОЙКИ СЛОЖНОСТИ
-// Пул: сколько разных типов деталей в игре.
-// Поле растёт только до 9×9 (Expert), дальше — мелко для пальца.
-// Сложность достигается прежде всего пулом: больше типов →
-// меньше случайных совпадений → нужно дольше искать ход.
+//  CONFIG
 // ═══════════════════════════════════════════════════════════════
 const DIFFICULTIES = {
   easy:   { cols: 7, rows: 7, gemTypes: 5  },
@@ -303,8 +535,6 @@ const DIFFICULTIES = {
   expert: { cols: 9, rows: 9, gemTypes: 12 },
 };
 
-// ── 42 картинки из 199, отобраны вручную (каждая визуально отличимая деталь) ──
-// Файлы лежат в ../mODS/image/ относительно index.html
 const ALL_IMGS = [
   '494858501.png','677190411.png','909212541.png','946006281.png',
   '1023327801.png','1350318051.png','1593794351.png','2489211861.png',
@@ -318,31 +548,40 @@ const ALL_IMGS = [
   '8519968641.png','8540916931.png','8601853291.png','8628014011.png',
   '9186094931.png','9312965381.png',
 ];
-// Путь к папке с картинками (относительно index.html)
-const IMG_PATH = '../mODS/image/';
+// Картинки лежат в ./textures/ (после запуска copy_textures.ps1)
+const IMG_PATH = './textures/';
 
-// ── Цвета-акценты для каждого из 12 слотов ──
 const GEM_COLORS = [
-  '#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c',
-  '#e91e63','#ff9800','#00bcd4','#f44336','#5c6bc0','#66bb6a',
+  '#e05252','#4a9ede','#4ecc7a','#e8a830','#a86cd4','#30c4a8',
+  '#e8407a','#e87830','#30bcd8','#e84040','#6878d0','#68c870',
 ];
+const GEM_FALLBACK = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
-// ── Глобальное состояние ──
-let COLS, ROWS, GEM_TYPES;
-let gemImgs = [];      // [gemIndex 0..N-1] → URL картинки
-let board   = [];
-let score   = 0;
-let selected = null;
-let busy    = false;
-let currentDiff = 'easy';
-
-const boardEl     = document.getElementById('board');
-const scoreEl     = document.getElementById('score');
-const comboBanner = document.getElementById('combo-banner');
-const noMovesEl   = document.getElementById('no-moves');
+const HINT_IDLE_MS = 4000;
 
 // ═══════════════════════════════════════════════════════════════
-// ИНИЦИАЛИЗАЦИЯ
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let COLS, ROWS, GEM_TYPES;
+let gemImgs   = [];
+let board     = [];
+let score     = 0;
+let selected  = null;
+let busy      = false;
+let currentDiff = 'easy';
+
+let hintEnabled = true;
+let hintTimer   = null;
+
+const boardEl    = document.getElementById('board');
+const scoreEl    = document.getElementById('score');
+const comboToast = document.getElementById('combo-toast');
+const comboVal   = document.getElementById('combo-value');
+const noMovesEl  = document.getElementById('no-moves');
+// (hint overlay removed — shimmer is applied directly to cells)
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
 // ═══════════════════════════════════════════════════════════════
 function setDifficulty(diff) {
   currentDiff = diff;
@@ -351,42 +590,42 @@ function setDifficulty(diff) {
   init();
 }
 
-function init() {
-  const cfg = DIFFICULTIES[currentDiff];
-  COLS      = cfg.cols;
-  ROWS      = cfg.rows;
-  GEM_TYPES = cfg.gemTypes;
+function onHintToggle() {
+  hintEnabled = document.getElementById('hint-toggle').checked;
+  if (!hintEnabled) hideHint();
+  else              resetHintTimer();
+}
 
-  // Берём первые GEM_TYPES картинок из ALL_IMGS
-  gemImgs = ALL_IMGS.slice(0, GEM_TYPES).map(f => IMG_PATH + f);
+function init() {
+  const cfg  = DIFFICULTIES[currentDiff];
+  COLS       = cfg.cols;
+  ROWS       = cfg.rows;
+  GEM_TYPES  = cfg.gemTypes;
+  gemImgs    = ALL_IMGS.slice(0, GEM_TYPES).map(f => IMG_PATH + f);
 
   score    = 0;
   selected = null;
   busy     = false;
-  scoreEl.textContent = 0;
+  scoreEl.textContent = '0';
   noMovesEl.classList.remove('visible');
-
-  // grid CSS
   boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
 
-  do {
-    board = createBoard();
-  } while (findMatches(board).length > 0 || !hasValidMove(board));
+  hideHint();
+  do { board = createBoard(); }
+  while (findMatches(board).length > 0 || !hasValidMove(board));
 
   renderBoard();
+  resetHintTimer();
 }
 
 function createBoard() {
   return Array.from({ length: ROWS }, () =>
     Array.from({ length: COLS }, () => randomGem()));
 }
-
-function randomGem() {
-  return Math.floor(Math.random() * GEM_TYPES) + 1; // 1..GEM_TYPES
-}
+function randomGem() { return Math.floor(Math.random() * GEM_TYPES) + 1; }
 
 // ═══════════════════════════════════════════════════════════════
-// РЕНДЕР
+//  RENDER
 // ═══════════════════════════════════════════════════════════════
 function renderBoard() {
   boardEl.innerHTML = '';
@@ -397,433 +636,410 @@ function renderBoard() {
 }
 
 function createCell(r, c) {
-  const g   = board[r][c]; // 1-based
+  const g   = board[r][c];
   const div = document.createElement('div');
-  div.className   = `cell gem-${g}`;
-  div.dataset.r   = r;
-  div.dataset.c   = c;
-  div.style.background = hexToRgba(GEM_COLORS[g - 1], 0.12);
+  div.className = `cell gem-${g}`;
+  div.dataset.r = r;
+  div.dataset.c = c;
 
-  // Номер детали (показывает всегда)
-  const numEl = document.createElement('span');
-  numEl.className   = 'num';
-  numEl.textContent = g;
-  div.appendChild(numEl);
-
-  // Картинка (если загрузится)
+  // Пробуем загрузить текстуру — без цифр и лейблов
   const src = gemImgs[g - 1];
   if (src) {
-    const img = new Image();
+    const img = document.createElement('img');
     img.src = src;
-    img.onload = () => {
-      if (div.isConnected) {
-        div.innerHTML = '';
-        div.appendChild(img);
-        const n = document.createElement('span');
-        n.className = 'num'; n.textContent = g;
-        div.appendChild(n);
-      }
-    };
+    img.alt = '';
+    // если не загрузится — покажем буквенный fallback
     img.onerror = () => {
-      if (div.isConnected && !div.querySelector('.emoji')) {
-        const em = document.createElement('span');
-        em.className = 'emoji';
-        em.textContent = ['⚙️','🔩','🔧','🛠️','⛏️','🔨','🪛','🪚','🔗','⚡','🧲','💎'][g - 1] || '⚙️';
-        div.insertBefore(em, div.firstChild);
-      }
+      if (!div.isConnected) return;
+      img.remove();
+      const fb = document.createElement('span');
+      fb.className = 'emoji';
+      fb.textContent = GEM_FALLBACK[g - 1];
+      fb.style.cssText = `font-size:clamp(0.7rem,3vw,1.1rem);font-weight:700;color:${GEM_COLORS[g-1]};font-family:monospace;`;
+      div.appendChild(fb);
     };
+    div.appendChild(img);
+  } else {
+    const fb = document.createElement('span');
+    fb.className = 'emoji';
+    fb.textContent = GEM_FALLBACK[g - 1];
+    fb.style.cssText = `font-size:clamp(0.7rem,3vw,1.1rem);font-weight:700;color:${GEM_COLORS[g-1]};font-family:monospace;`;
+    div.appendChild(fb);
   }
 
   return div;
 }
 
-function hexToRgba(hex, a) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-
-function getCell(r, c) {
-  return boardEl.children[r * COLS + c] || null;
-}
+function getCell(r, c) { return boardEl.children[r * COLS + c] || null; }
 
 function updateCell(r, c) {
-  const old   = getCell(r, c);
-  const fresh = createCell(r, c);
-  if (old) boardEl.replaceChild(fresh, old);
+  const old = getCell(r, c);
+  if (!old) return;
+  boardEl.replaceChild(createCell(r, c), old);
 }
 
 // ═══════════════════════════════════════════════════════════════
-// POINTER / TOUCH EVENTS
+//  CASCADE RENDER — только изменившиеся ячейки
 // ═══════════════════════════════════════════════════════════════
-let touchStart = null;
-let eventsAttached = false;
+function renderCascade(prevBoard) {
+  const cellH = getCell(0, 0)?.getBoundingClientRect().height || 42;
+
+  for (let c = 0; c < COLS; c++) {
+    // Строим список ненулевых значений в колонке prevBoard (сверху вниз)
+    const prevVals = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (prevBoard[r][c] !== 0) prevVals.push({ val: prevBoard[r][c], row: r });
+    }
+    // Используем те же значения в новом board снизу вверх (гравитация)
+    const usedIdx = {};
+
+    for (let r = 0; r < ROWS; r++) {
+      const v    = board[r][c];
+      const cell = getCell(r, c);
+      if (!cell) continue;
+
+      // Ищем это значение в prevVals начиная с usedIdx[v]
+      const startIdx = usedIdx[v] ?? 0;
+      let   foundRow = -1;
+      for (let i = startIdx; i < prevVals.length; i++) {
+        if (prevVals[i].val === v) { foundRow = prevVals[i].row; usedIdx[v] = i + 1; break; }
+      }
+
+      if (foundRow === r) continue; // не двигалась
+
+      const fresh = createCell(r, c);
+      if (foundRow >= 0) {
+        // Упала с foundRow → r
+        fresh.style.setProperty('--fall-from', `${(foundRow - r) * (cellH + 3)}px`);
+      } else {
+        // Новая деталь — падает сверху за пределы поля
+        fresh.style.setProperty('--fall-from', `${-(r + 1) * (cellH + 3)}px`);
+      }
+      fresh.classList.add('fall-in');
+      // Небольшой stagger по колонке для красоты
+      fresh.style.animationDelay = `${c * 18}ms`;
+      boardEl.replaceChild(fresh, cell);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  POINTER EVENTS
+// ═══════════════════════════════════════════════════════════════
+let touchStart      = null;
+let eventsAttached  = false;
 
 function attachPointerEvents() {
   if (eventsAttached) return;
   eventsAttached = true;
-  boardEl.addEventListener('pointerdown', onPointerDown, { passive: false });
-  boardEl.addEventListener('pointermove', onPointerMove, { passive: false });
-  boardEl.addEventListener('pointerup',   onPointerUp,   { passive: false });
+  boardEl.addEventListener('pointerdown', onDown, { passive: false });
+  boardEl.addEventListener('pointermove', onMove, { passive: false });
+  boardEl.addEventListener('pointerup',   onUp,   { passive: false });
 }
 
 function cellFromPoint(x, y) {
   const el   = document.elementFromPoint(x, y);
-  const cell = el && el.closest('.cell');
+  const cell = el?.closest('.cell');
   if (!cell) return null;
   return { r: +cell.dataset.r, c: +cell.dataset.c };
 }
 
-function onPointerDown(e) {
+function onDown(e) {
   if (busy) return;
   e.preventDefault();
+  hideHint();
   const pos = cellFromPoint(e.clientX, e.clientY);
   if (!pos) return;
   touchStart = pos;
   selectCell(pos.r, pos.c);
 }
-
-function onPointerMove(e) {
-  if (!touchStart || busy) return;
-  e.preventDefault();
-}
-
-function onPointerUp(e) {
+function onMove(e) { if (touchStart && !busy) e.preventDefault(); }
+function onUp(e) {
   if (!touchStart || busy) return;
   e.preventDefault();
   const pos = cellFromPoint(e.clientX, e.clientY);
   if (pos && (pos.r !== touchStart.r || pos.c !== touchStart.c)) {
-    const dr = pos.r - touchStart.r;
-    const dc = pos.c - touchStart.c;
+    const dr = pos.r - touchStart.r, dc = pos.c - touchStart.c;
     const nr = touchStart.r + Math.sign(dr) * (Math.abs(dr) >= Math.abs(dc) ? 1 : 0);
     const nc = touchStart.c + Math.sign(dc) * (Math.abs(dc) >  Math.abs(dr) ? 1 : 0);
-    if (isInBounds(nr, nc)) {
-      clearSelection();
-      trySwap(touchStart.r, touchStart.c, nr, nc);
-    }
+    if (isInBounds(nr, nc)) { clearSelection(); trySwap(touchStart.r, touchStart.c, nr, nc); }
   }
   touchStart = null;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ВЫБОР И СВАП
+//  SELECT & SWAP
 // ═══════════════════════════════════════════════════════════════
 function selectCell(r, c) {
   if (selected) {
     const { r: sr, c: sc } = selected;
     if (sr === r && sc === c) { clearSelection(); return; }
-    if (isNeighbour(sr, sc, r, c)) {
-      clearSelection();
-      trySwap(sr, sc, r, c);
-      return;
-    }
+    if (isNeighbour(sr, sc, r, c)) { clearSelection(); trySwap(sr, sc, r, c); return; }
     clearSelection();
   }
   selected = { r, c };
-  const cell = getCell(r, c);
-  if (cell) cell.classList.add('selected');
+  getCell(r, c)?.classList.add('selected');
 }
-
 function clearSelection() {
-  if (selected) {
-    const cell = getCell(selected.r, selected.c);
-    if (cell) cell.classList.remove('selected');
-  }
+  if (selected) getCell(selected.r, selected.c)?.classList.remove('selected');
   selected = null;
 }
-
 function isNeighbour(r1,c1,r2,c2) { return Math.abs(r1-r2)+Math.abs(c1-c2)===1; }
-function isInBounds(r,c) { return r>=0 && r<ROWS && c>=0 && c<COLS; }
+function isInBounds(r,c) { return r>=0&&r<ROWS&&c>=0&&c<COLS; }
 
 async function trySwap(r1,c1,r2,c2) {
   busy = true;
-
-  // Проверяем валидность
   swapData(r1,c1,r2,c2);
   const valid = findMatches(board).length > 0;
-  swapData(r1,c1,r2,c2); // вернули как было
+  swapData(r1,c1,r2,c2);
 
   if (!valid) {
-    // Полный свап туда → обратно (показываем что не работает)
-    await animateSwap3D(r1,c1,r2,c2, /*revert=*/true);
+    await animateSwap3D(r1,c1,r2,c2, true);
     busy = false;
+    resetHintTimer();
     return;
   }
 
-  // Валидный: анимируем → меняем данные → обрабатываем матчи
-  await animateSwap3D(r1,c1,r2,c2, /*revert=*/false);
+  await animateSwap3D(r1,c1,r2,c2, false);
   swapData(r1,c1,r2,c2);
   updateCell(r1,c1);
   updateCell(r2,c2);
 
   await processMatches(1);
   busy = false;
+  resetHintTimer();
   if (!hasValidMove(board)) noMovesEl.classList.add('visible');
 }
-
 function swapData(r1,c1,r2,c2) {
   [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ПСЕВДО-3D АНИМАЦИЯ СВАПА
+//  PSEUDO-3D SWAP ANIMATION
 // ═══════════════════════════════════════════════════════════════
 async function animateSwap3D(r1,c1,r2,c2, revert) {
-  const cell1 = getCell(r1,c1);
-  const cell2 = getCell(r2,c2);
-  if (!cell1 || !cell2) return;
+  const cell1 = getCell(r1,c1), cell2 = getCell(r2,c2);
+  if (!cell1||!cell2) return;
 
   const rect1 = cell1.getBoundingClientRect();
   const rect2 = cell2.getBoundingClientRect();
-
-  const fly1 = makeFlyingCard(cell1, rect1);
-  const fly2 = makeFlyingCard(cell2, rect2);
+  const fly1  = makeFlyingCard(cell1, rect1);
+  const fly2  = makeFlyingCard(cell2, rect2);
   document.body.appendChild(fly1);
   document.body.appendChild(fly2);
-
   cell1.classList.add('swap-ghost');
   cell2.classList.add('swap-ghost');
 
-  // Смещения для перелёта
-  const dx = rect2.left - rect1.left;
-  const dy = rect2.top  - rect1.top;
-  // Высота дуги — чуть вверх в середине пути
-  const arc = -Math.max(Math.abs(dx), Math.abs(dy)) * 0.30;
+  const dx  = rect2.left - rect1.left;
+  const dy  = rect2.top  - rect1.top;
+  const arc = -Math.max(Math.abs(dx), Math.abs(dy)) * 0.28;
 
-  const T_LIFT = 100; // подъём
-  const T_MOVE = 200; // перелёт
-  const T_DROP = 90;  // опускание
+  const TL = 95, TM = 190, TD = 80;
+  const S  = 1.18;
+  const SH0 = '0 2px 6px rgba(0,0,0,0.3)';
+  const SH1 = '0 10px 26px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.12)';
+  const SH2 = '0 18px 38px rgba(0,0,0,0.65), 0 0 12px rgba(255,255,255,0.08)';
+  const o   = (e,d) => ({ duration:d, easing:e, fill:'forwards' });
 
-  const S   = 1.20;
-  const SH0 = '0 3px 8px #0005';
-  const SH1 = '0 12px 28px #000a, 0 0 0 2px #fff8';
-  const SH2 = '0 20px 40px #000c, 0 0 14px #fff3';
+  const fly = async (el, kfs, dur, ease) =>
+    el.animate(kfs, o(ease, dur)).finished;
 
-  const ease = (name) => ({ easing: name });
-
-  // ── Фаза 1: оба поднимаются ──
+  // lift
   await Promise.all([
-    fly1.animate([
-      { transform: `scale(1) translateZ(0px)`,  boxShadow: SH0 },
-      { transform: `scale(${S}) translateZ(22px)`, boxShadow: SH1 },
-    ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
-    fly2.animate([
-      { transform: `scale(1) translateZ(0px)`,  boxShadow: SH0 },
-      { transform: `scale(${S}) translateZ(22px)`, boxShadow: SH1 },
-    ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
+    fly(fly1,[{transform:`scale(1) translateZ(0)`,boxShadow:SH0},{transform:`scale(${S}) translateZ(20px)`,boxShadow:SH1}],TL,'ease-out'),
+    fly(fly2,[{transform:`scale(1) translateZ(0)`,boxShadow:SH0},{transform:`scale(${S}) translateZ(20px)`,boxShadow:SH1}],TL,'ease-out'),
   ]);
 
-  // ── Фаза 2: летят к новым позициям ──
+  // fly forward
   await Promise.all([
-    fly1.animate([
-      { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,           boxShadow: SH1 },
-      { transform: `scale(${S}) translateZ(30px) translate(${dx*.5}px,${dy*.5+arc}px)`, boxShadow: SH2, offset: 0.5 },
-      { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`,   boxShadow: SH1 },
-    ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
-    fly2.animate([
-      { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,              boxShadow: SH1 },
-      { transform: `scale(${S}) translateZ(30px) translate(${-dx*.5}px,${-dy*.5+arc}px)`, boxShadow: SH2, offset: 0.5 },
-      { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`,   boxShadow: SH1 },
-    ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
+    fly(fly1,[
+      {transform:`scale(${S}) translateZ(20px) translate(0,0)`,boxShadow:SH1},
+      {transform:`scale(${S}) translateZ(28px) translate(${dx*.5}px,${dy*.5+arc}px)`,boxShadow:SH2,offset:.5},
+      {transform:`scale(${S}) translateZ(20px) translate(${dx}px,${dy}px)`,boxShadow:SH1},
+    ],TM,'ease-in-out'),
+    fly(fly2,[
+      {transform:`scale(${S}) translateZ(20px) translate(0,0)`,boxShadow:SH1},
+      {transform:`scale(${S}) translateZ(28px) translate(${-dx*.5}px,${-dy*.5+arc}px)`,boxShadow:SH2,offset:.5},
+      {transform:`scale(${S}) translateZ(20px) translate(${-dx}px,${-dy}px)`,boxShadow:SH1},
+    ],TM,'ease-in-out'),
   ]);
 
-  // ── Фаза 3: приземляются на НОВЫХ позициях ──
+  // land on new positions
   await Promise.all([
-    fly1.animate([
-      { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`,  boxShadow: SH1 },
-      { transform: `scale(1)   translateZ(0px)  translate(${dx}px,${dy}px)`,  boxShadow: SH0 },
-    ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
-    fly2.animate([
-      { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`, boxShadow: SH1 },
-      { transform: `scale(1)   translateZ(0px)  translate(${-dx}px,${-dy}px)`, boxShadow: SH0 },
-    ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
+    fly(fly1,[{transform:`scale(${S}) translateZ(20px) translate(${dx}px,${dy}px)`,boxShadow:SH1},{transform:`scale(1) translateZ(0) translate(${dx}px,${dy}px)`,boxShadow:SH0}],TD,'ease-in'),
+    fly(fly2,[{transform:`scale(${S}) translateZ(20px) translate(${-dx}px,${-dy}px)`,boxShadow:SH1},{transform:`scale(1) translateZ(0) translate(${-dx}px,${-dy}px)`,boxShadow:SH0}],TD,'ease-in'),
   ]);
 
-  // Если невалидный ход — летят ОБРАТНО (те же 3 фазы в реверсе)
   if (revert) {
-    // небольшая пауза чтобы игрок увидел позиции
-    await delay(60);
-
-    // подъём с новых позиций
+    await delay(50);
+    // lift from new
     await Promise.all([
-      fly1.animate([
-        { transform: `scale(1)   translateZ(0px)  translate(${dx}px,${dy}px)`,  boxShadow: SH0 },
-        { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`, boxShadow: SH1 },
-      ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
-      fly2.animate([
-        { transform: `scale(1)   translateZ(0px)  translate(${-dx}px,${-dy}px)`, boxShadow: SH0 },
-        { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`, boxShadow: SH1 },
-      ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
+      fly(fly1,[{transform:`scale(1) translateZ(0) translate(${dx}px,${dy}px)`,boxShadow:SH0},{transform:`scale(${S}) translateZ(20px) translate(${dx}px,${dy}px)`,boxShadow:SH1}],TL,'ease-out'),
+      fly(fly2,[{transform:`scale(1) translateZ(0) translate(${-dx}px,${-dy}px)`,boxShadow:SH0},{transform:`scale(${S}) translateZ(20px) translate(${-dx}px,${-dy}px)`,boxShadow:SH1}],TL,'ease-out'),
     ]);
-
-    // летят обратно
+    // fly back
     await Promise.all([
-      fly1.animate([
-        { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`,          boxShadow: SH1 },
-        { transform: `scale(${S}) translateZ(30px) translate(${dx*.5}px,${dy*.5+arc}px)`,boxShadow: SH2, offset: 0.5 },
-        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,                  boxShadow: SH1 },
-      ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
-      fly2.animate([
-        { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`,           boxShadow: SH1 },
-        { transform: `scale(${S}) translateZ(30px) translate(${-dx*.5}px,${-dy*.5+arc}px)`, boxShadow: SH2, offset: 0.5 },
-        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,                     boxShadow: SH1 },
-      ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
+      fly(fly1,[
+        {transform:`scale(${S}) translateZ(20px) translate(${dx}px,${dy}px)`,boxShadow:SH1},
+        {transform:`scale(${S}) translateZ(28px) translate(${dx*.5}px,${dy*.5+arc}px)`,boxShadow:SH2,offset:.5},
+        {transform:`scale(${S}) translateZ(20px) translate(0,0)`,boxShadow:SH1},
+      ],TM,'ease-in-out'),
+      fly(fly2,[
+        {transform:`scale(${S}) translateZ(20px) translate(${-dx}px,${-dy}px)`,boxShadow:SH1},
+        {transform:`scale(${S}) translateZ(28px) translate(${-dx*.5}px,${-dy*.5+arc}px)`,boxShadow:SH2,offset:.5},
+        {transform:`scale(${S}) translateZ(20px) translate(0,0)`,boxShadow:SH1},
+      ],TM,'ease-in-out'),
     ]);
-
-    // опускаются на исходные позиции
+    // land original
     await Promise.all([
-      fly1.animate([
-        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`, boxShadow: SH1 },
-        { transform: `scale(1)   translateZ(0px)  translate(0px,0px)`, boxShadow: SH0 },
-      ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
-      fly2.animate([
-        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`, boxShadow: SH1 },
-        { transform: `scale(1)   translateZ(0px)  translate(0px,0px)`, boxShadow: SH0 },
-      ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
+      fly(fly1,[{transform:`scale(${S}) translateZ(20px) translate(0,0)`,boxShadow:SH1},{transform:`scale(1) translateZ(0) translate(0,0)`,boxShadow:SH0}],TD,'ease-in'),
+      fly(fly2,[{transform:`scale(${S}) translateZ(20px) translate(0,0)`,boxShadow:SH1},{transform:`scale(1) translateZ(0) translate(0,0)`,boxShadow:SH0}],TD,'ease-in'),
     ]);
   }
 
-  fly1.remove();
-  fly2.remove();
+  fly1.remove(); fly2.remove();
   cell1.classList.remove('swap-ghost');
   cell2.classList.remove('swap-ghost');
 }
 
 function makeFlyingCard(cell, rect) {
   const fly = document.createElement('div');
-  const gemClass = [...cell.classList].find(cl => cl.startsWith('gem-')) || 'gem-1';
-  fly.className = `flying-card ${gemClass}`;
-  fly.style.cssText = `
-    left:${rect.left}px; top:${rect.top}px;
-    width:${rect.width}px; height:${rect.height}px;
-    background:${getComputedStyle(cell).backgroundColor};
-    border-radius:8px;
-    transform-origin:center center;
-  `;
+  fly.className = `flying-card ${[...cell.classList].find(c=>c.startsWith('gem-'))||'gem-1'}`;
+  fly.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;transform-origin:center center;`;
   fly.innerHTML = cell.innerHTML;
   return fly;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// МАТЧИ И КАСКАДЫ
+//  MATCHES & CASCADES
 // ═══════════════════════════════════════════════════════════════
 function findMatches(b) {
-  const matched = new Set();
-  // горизонталь
-  for (let r = 0; r < ROWS; r++) {
-    let run = 1;
-    for (let c = 1; c < COLS; c++) {
-      if (b[r][c] === b[r][c-1]) {
-        run++;
-        if (run === 3) { matched.add(`${r},${c-2}`); matched.add(`${r},${c-1}`); matched.add(`${r},${c}`); }
-        else if (run > 3) matched.add(`${r},${c}`);
-      } else run = 1;
-    }
-  }
-  // вертикаль
-  for (let c = 0; c < COLS; c++) {
-    let run = 1;
-    for (let r = 1; r < ROWS; r++) {
-      if (b[r][c] === b[r-1][c]) {
-        run++;
-        if (run === 3) { matched.add(`${r-2},${c}`); matched.add(`${r-1},${c}`); matched.add(`${r},${c}`); }
-        else if (run > 3) matched.add(`${r},${c}`);
-      } else run = 1;
-    }
-  }
-  return [...matched].map(k => { const [r,c] = k.split(','); return { r:+r, c:+c }; });
+  const set = new Set();
+  for (let r=0;r<ROWS;r++){let run=1;for(let c=1;c<COLS;c++){if(b[r][c]===b[r][c-1]){run++;if(run===3){set.add(`${r},${c-2}`);set.add(`${r},${c-1}`);set.add(`${r},${c}`);}else if(run>3)set.add(`${r},${c}`);}else run=1;}}
+  for (let c=0;c<COLS;c++){let run=1;for(let r=1;r<ROWS;r++){if(b[r][c]===b[r-1][c]){run++;if(run===3){set.add(`${r-2},${c}`);set.add(`${r-1},${c}`);set.add(`${r},${c}`);}else if(run>3)set.add(`${r},${c}`);}else run=1;}}
+  return [...set].map(k=>{const[r,c]=k.split(',');return{r:+r,c:+c};});
 }
 
 async function processMatches(combo) {
   const matches = findMatches(board);
-  if (matches.length === 0) return;
+  if (!matches.length) return;
 
   score += matches.length * 10 * combo;
-  scoreEl.textContent = score;
+  scoreEl.textContent = score.toLocaleString();
   if (combo > 1) showCombo(combo);
 
-  for (const { r,c } of matches) {
-    const cell = getCell(r,c);
-    if (cell) cell.classList.add('matched');
+  for (const {r,c} of matches) {
+    getCell(r,c)?.classList.add('matched');
     board[r][c] = 0;
   }
-  await delay(320);
+  await delay(285);
 
+  const prev = deepCopy(board);
   applyGravity();
   fillBoard();
-  renderBoardAnimated();
-  await delay(290);
+  renderCascade(prev);
+  await delay(420);
 
   await processMatches(combo + 1);
 }
 
 function applyGravity() {
-  for (let c = 0; c < COLS; c++) {
-    let empty = ROWS - 1;
-    for (let r = ROWS - 1; r >= 0; r--) {
-      if (board[r][c] !== 0) { board[empty][c] = board[r][c]; if (empty!==r) board[r][c]=0; empty--; }
+  for (let c=0;c<COLS;c++){let e=ROWS-1;for(let r=ROWS-1;r>=0;r--){if(board[r][c]!==0){board[e][c]=board[r][c];if(e!==r)board[r][c]=0;e--;}}while(e>=0){board[e][c]=0;e--;}}
+}
+function fillBoard() {
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(board[r][c]===0)board[r][c]=randomGem();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HINT — шиммер на конкретных двух ячейках
+// ═══════════════════════════════════════════════════════════════
+function resetHintTimer() {
+  hideHint();
+  if (!hintEnabled) return;
+  hintTimer = setTimeout(showHint, HINT_IDLE_MS);
+}
+
+function hideHint() {
+  if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+  // Снимаем класс hint со всех ячеек
+  boardEl.querySelectorAll('.cell.hint').forEach(c => c.classList.remove('hint'));
+}
+
+function showHint() {
+  if (!hintEnabled || busy) { resetHintTimer(); return; }
+
+  // Ищем первый валидный ход — возвращаем пару ячеек
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (c + 1 < COLS) {
+        const cp = deepCopy(board);
+        [cp[r][c], cp[r][c+1]] = [cp[r][c+1], cp[r][c]];
+        if (findMatches(cp).length > 0) {
+          applyHint(r, c, r, c + 1);
+          return;
+        }
+      }
+      if (r + 1 < ROWS) {
+        const cp = deepCopy(board);
+        [cp[r][c], cp[r+1][c]] = [cp[r+1][c], cp[r][c]];
+        if (findMatches(cp).length > 0) {
+          applyHint(r, c, r + 1, c);
+          return;
+        }
+      }
     }
-    while (empty >= 0) { board[empty][c] = 0; empty--; }
   }
 }
 
-function fillBoard() {
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (board[r][c] === 0) board[r][c] = randomGem();
-}
-
-function renderBoardAnimated() {
-  boardEl.innerHTML = '';
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++) {
-      const cell = createCell(r,c);
-      cell.classList.add('fall-in');
-      boardEl.appendChild(cell);
-    }
-  // НЕ вызываем attachPointerEvents — слушатели уже висят на boardEl
+function applyHint(r1, c1, r2, c2) {
+  const cell1 = getCell(r1, c1);
+  const cell2 = getCell(r2, c2);
+  if (cell1) cell1.classList.add('hint');
+  if (cell2) cell2.classList.add('hint');
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ПРОВЕРКА ХОДОВ
+//  VALID MOVES / SHUFFLE
 // ═══════════════════════════════════════════════════════════════
 function hasValidMove(b) {
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (c+1 < COLS) { const cp=deepCopy(b); [cp[r][c],cp[r][c+1]]=[cp[r][c+1],cp[r][c]]; if (findMatches(cp).length>0) return true; }
-      if (r+1 < ROWS) { const cp=deepCopy(b); [cp[r][c],cp[r+1][c]]=[cp[r+1][c],cp[r][c]]; if (findMatches(cp).length>0) return true; }
-    }
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(c+1<COLS){const cp=deepCopy(b);[cp[r][c],cp[r][c+1]]=[cp[r][c+1],cp[r][c]];if(findMatches(cp).length>0)return true;}
+    if(r+1<ROWS){const cp=deepCopy(b);[cp[r][c],cp[r+1][c]]=[cp[r+1][c],cp[r][c]];if(findMatches(cp).length>0)return true;}
   }
   return false;
 }
+function deepCopy(b) { return b.map(r=>[...r]); }
 
-function deepCopy(b) { return b.map(row => [...row]); }
-
-// ═══════════════════════════════════════════════════════════════
-// ПЕРЕМЕШИВАНИЕ
-// ═══════════════════════════════════════════════════════════════
 function shuffleBoard() {
   noMovesEl.classList.remove('visible');
-  do {
-    for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c]=randomGem();
-  } while (findMatches(board).length>0 || !hasValidMove(board));
+  do { for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)board[r][c]=randomGem(); }
+  while(findMatches(board).length>0||!hasValidMove(board));
   renderBoard();
   busy = false;
+  resetHintTimer();
 }
 
 // ═══════════════════════════════════════════════════════════════
-// УТИЛИТЫ
+//  UTILS
 // ═══════════════════════════════════════════════════════════════
+let comboHideTimer = null;
 function showCombo(level) {
-  comboBanner.textContent = `КОМБО ×${level} 🔥`;
-  comboBanner.classList.add('show');
-  setTimeout(() => comboBanner.classList.remove('show'), 950);
+  comboVal.textContent = `x${level}`;
+  // Сбрасываем предыдущую анимацию
+  comboToast.classList.remove('show', 'hide');
+  // Форсируем reflow чтобы анимация перезапустилась
+  void comboToast.offsetWidth;
+  comboToast.classList.add('show');
+  if (comboHideTimer) clearTimeout(comboHideTimer);
+  comboHideTimer = setTimeout(() => {
+    comboToast.classList.remove('show');
+    comboToast.classList.add('hide');
+  }, 950);
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ── Старт ──
+// ── Start ──
 init();
 </script>
 </body>
