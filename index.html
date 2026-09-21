@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Три в ряд — Детали</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f0f1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100dvh;
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px 6px;
+    flex-shrink: 0;
+  }
+  h1 { font-size: 1.1rem; letter-spacing: 1px; color: #e0c97f; }
+  #score-box { text-align: right; }
+  #score-label { font-size: 0.6rem; color: #777; text-transform: uppercase; letter-spacing: 1px; }
+  #score { font-size: 1.4rem; font-weight: bold; color: #e0c97f; }
+
+  /* ── Difficulty bar ── */
+  #diff-bar {
+    display: flex;
+    gap: 6px;
+    padding: 0 14px 6px;
+    width: 100%;
+    max-width: 480px;
+    flex-shrink: 0;
+  }
+  .diff-btn {
+    flex: 1;
+    padding: 5px 2px;
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    background: #1a1a2e;
+    color: #888;
+    font-size: 0.65rem;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .diff-btn.active {
+    background: #e0c97f;
+    color: #1a1a2e;
+    border-color: #e0c97f;
+  }
+
+  /* ── Board ── */
+  #board-wrap {
+    width: min(100vw, 480px);
+    padding: 4px;
+    flex-shrink: 0;
+  }
+  #board {
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    perspective: 700px;
+  }
+
+  /* ── Cell ── */
+  .cell {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+    transform-style: preserve-3d;
+    will-change: transform, box-shadow;
+    transition: box-shadow 0.1s;
+    background: #1e2235;
+    border: 1px solid #ffffff18;
+  }
+
+  /* фон-цвет как тинт под картинку */
+  .gem-1  { background: #2a1a1a; border-color: #e74c3c44; }
+  .gem-2  { background: #1a1f2a; border-color: #3498db44; }
+  .gem-3  { background: #1a2a1a; border-color: #2ecc7144; }
+  .gem-4  { background: #2a2218; border-color: #f39c1244; }
+  .gem-5  { background: #221a2a; border-color: #9b59b644; }
+  .gem-6  { background: #1a2a27; border-color: #1abc9c44; }
+  .gem-7  { background: #2a1a24; border-color: #e91e6344; }
+  .gem-8  { background: #2a261a; border-color: #ff980044; }
+  .gem-9  { background: #1a2628; border-color: #00bcd444; }
+  .gem-10 { background: #261a1a; border-color: #f4433644; }
+  .gem-11 { background: #1a1e28; border-color: #5c6bc044; }
+  .gem-12 { background: #1e261a; border-color: #66bb6a44; }
+
+  /* dot-color indicator (маленький кружок в углу — чтобы различать при мелких ячейках) */
+  .cell::after {
+    content: '';
+    position: absolute;
+    bottom: 3px; right: 3px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    opacity: 0.7;
+  }
+  .gem-1::after  { background: #e74c3c; }
+  .gem-2::after  { background: #3498db; }
+  .gem-3::after  { background: #2ecc71; }
+  .gem-4::after  { background: #f39c12; }
+  .gem-5::after  { background: #9b59b6; }
+  .gem-6::after  { background: #1abc9c; }
+  .gem-7::after  { background: #e91e63; }
+  .gem-8::after  { background: #ff9800; }
+  .gem-9::after  { background: #00bcd4; }
+  .gem-10::after { background: #f44336; }
+  .gem-11::after { background: #5c6bc0; }
+  .gem-12::after { background: #66bb6a; }
+
+  .cell img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 4px #0008);
+  }
+  .cell .num {
+    font-size: clamp(0.4rem, 1.8vw, 0.7rem);
+    opacity: 0.5;
+    line-height: 1;
+    pointer-events: none;
+    position: absolute;
+    top: 2px; left: 4px;
+  }
+  .cell .emoji {
+    font-size: clamp(0.9rem, 3.5vw, 1.4rem);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .cell.selected {
+    box-shadow: 0 0 0 2.5px #fff, 0 6px 18px #0009;
+    transform: scale(1.1) translateZ(6px);
+    z-index: 2;
+  }
+
+  /* призрак во время полёта */
+  .cell.swap-ghost {
+    opacity: 0.12;
+    pointer-events: none;
+  }
+
+  /* ── Flying card (абсолютный клон) ── */
+  .flying-card {
+    position: fixed;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    pointer-events: none;
+    z-index: 1000;
+    will-change: transform, box-shadow, filter;
+    transform-style: preserve-3d;
+    border: 1px solid #ffffff22;
+    overflow: hidden;
+  }
+  .flying-card img   { width: 80%; height: 80%; object-fit: contain; filter: drop-shadow(0 2px 4px #0008); }
+  .flying-card .num  { font-size: clamp(0.4rem, 1.8vw, 0.7rem); opacity: 0.5; position: absolute; top: 2px; left: 4px; }
+  .flying-card .emoji{ font-size: clamp(0.9rem, 3.5vw, 1.4rem); }
+
+  /* ── Animations ── */
+  .cell.matched {
+    animation: pop 0.32s ease forwards;
+    pointer-events: none;
+  }
+  .cell.fall-in {
+    animation: fall 0.28s ease forwards;
+  }
+  @keyframes pop {
+    0%   { transform: scale(1);   opacity: 1; }
+    40%  { transform: scale(1.25);opacity: 0.7; filter: brightness(2); }
+    100% { transform: scale(0);   opacity: 0; }
+  }
+  @keyframes fall {
+    0%   { transform: translateY(-50px); opacity: 0; }
+    100% { transform: translateY(0);     opacity: 1; }
+  }
+
+  /* ── Combo banner ── */
+  #combo-banner {
+    position: fixed;
+    top: 28%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: #e0c97f;
+    color: #1a1a2e;
+    font-size: 1.3rem;
+    font-weight: bold;
+    padding: 7px 22px;
+    border-radius: 18px;
+    pointer-events: none;
+    z-index: 500;
+    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), opacity 0.18s;
+    opacity: 0;
+  }
+  #combo-banner.show {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+
+  /* ── No moves overlay ── */
+  #no-moves {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000a;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    flex-direction: column;
+    gap: 14px;
+    backdrop-filter: blur(4px);
+  }
+  #no-moves.visible { display: flex; }
+  #no-moves p { font-size: 1.3rem; color: #e0c97f; text-align: center; padding: 0 24px; }
+  #no-moves button {
+    padding: 11px 30px;
+    background: #e0c97f;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  footer {
+    margin-top: 6px;
+    font-size: 0.6rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ Детали</h1>
+  <div id="score-box">
+    <div id="score-label">Очки</div>
+    <div id="score">0</div>
+  </div>
+</header>
+
+<div id="diff-bar">
+  <button class="diff-btn active" data-diff="easy"   onclick="setDifficulty('easy')">Легко</button>
+  <button class="diff-btn"        data-diff="normal"  onclick="setDifficulty('normal')">Норма</button>
+  <button class="diff-btn"        data-diff="hard"    onclick="setDifficulty('hard')">Сложно</button>
+  <button class="diff-btn"        data-diff="expert"  onclick="setDifficulty('expert')">Эксперт</button>
+</div>
+
+<div id="board-wrap">
+  <div id="board"></div>
+</div>
+
+<div id="combo-banner"></div>
+
+<div id="no-moves">
+  <p>Нет доступных ходов!</p>
+  <button onclick="shuffleBoard()">Перемешать</button>
+</div>
+
+<footer>Тап или свайп — меняй соседей</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// НАСТРОЙКИ СЛОЖНОСТИ
+// Пул: сколько разных типов деталей в игре.
+// Поле растёт только до 9×9 (Expert), дальше — мелко для пальца.
+// Сложность достигается прежде всего пулом: больше типов →
+// меньше случайных совпадений → нужно дольше искать ход.
+// ═══════════════════════════════════════════════════════════════
+const DIFFICULTIES = {
+  easy:   { cols: 7, rows: 7, gemTypes: 5  },
+  normal: { cols: 8, rows: 8, gemTypes: 7  },
+  hard:   { cols: 8, rows: 8, gemTypes: 9  },
+  expert: { cols: 9, rows: 9, gemTypes: 12 },
+};
+
+// ── 42 картинки из 199, отобраны вручную (каждая визуально отличимая деталь) ──
+// Файлы лежат в ../mODS/image/ относительно index.html
+const ALL_IMGS = [
+  '494858501.png','677190411.png','909212541.png','946006281.png',
+  '1023327801.png','1350318051.png','1593794351.png','2489211861.png',
+  '2550003631.png','2638402031.png','2899937651.png','3241715591.png',
+  '3494283921.png','3503704291.png','3858232881.png','4062681351.png',
+  '4469738251.png','4921273661.png','5059758041.png','5081440011.png',
+  '5084435091.png','5145193431.png','5147000371.png','5570842761.png',
+  '5750286311.png','5753922651.png','5754108431.png','5825793581.png',
+  '6156501671.png','6186879891.png','6745924971.png','6938101851.png',
+  '7120636581.png','7347299641.png','8074461121.png','8355742941.png',
+  '8519968641.png','8540916931.png','8601853291.png','8628014011.png',
+  '9186094931.png','9312965381.png',
+];
+// Путь к папке с картинками (относительно index.html)
+const IMG_PATH = '../mODS/image/';
+
+// ── Цвета-акценты для каждого из 12 слотов ──
+const GEM_COLORS = [
+  '#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c',
+  '#e91e63','#ff9800','#00bcd4','#f44336','#5c6bc0','#66bb6a',
+];
+
+// ── Глобальное состояние ──
+let COLS, ROWS, GEM_TYPES;
+let gemImgs = [];      // [gemIndex 0..N-1] → URL картинки
+let board   = [];
+let score   = 0;
+let selected = null;
+let busy    = false;
+let currentDiff = 'easy';
+
+const boardEl     = document.getElementById('board');
+const scoreEl     = document.getElementById('score');
+const comboBanner = document.getElementById('combo-banner');
+const noMovesEl   = document.getElementById('no-moves');
+
+// ═══════════════════════════════════════════════════════════════
+// ИНИЦИАЛИЗАЦИЯ
+// ═══════════════════════════════════════════════════════════════
+function setDifficulty(diff) {
+  currentDiff = diff;
+  document.querySelectorAll('.diff-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.diff === diff));
+  init();
+}
+
+function init() {
+  const cfg = DIFFICULTIES[currentDiff];
+  COLS      = cfg.cols;
+  ROWS      = cfg.rows;
+  GEM_TYPES = cfg.gemTypes;
+
+  // Берём первые GEM_TYPES картинок из ALL_IMGS
+  gemImgs = ALL_IMGS.slice(0, GEM_TYPES).map(f => IMG_PATH + f);
+
+  score    = 0;
+  selected = null;
+  busy     = false;
+  scoreEl.textContent = 0;
+  noMovesEl.classList.remove('visible');
+
+  // grid CSS
+  boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+
+  do {
+    board = createBoard();
+  } while (findMatches(board).length > 0 || !hasValidMove(board));
+
+  renderBoard();
+}
+
+function createBoard() {
+  return Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => randomGem()));
+}
+
+function randomGem() {
+  return Math.floor(Math.random() * GEM_TYPES) + 1; // 1..GEM_TYPES
+}
+
+// ═══════════════════════════════════════════════════════════════
+// РЕНДЕР
+// ═══════════════════════════════════════════════════════════════
+function renderBoard() {
+  boardEl.innerHTML = '';
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      boardEl.appendChild(createCell(r, c));
+  attachPointerEvents();
+}
+
+function createCell(r, c) {
+  const g   = board[r][c]; // 1-based
+  const div = document.createElement('div');
+  div.className   = `cell gem-${g}`;
+  div.dataset.r   = r;
+  div.dataset.c   = c;
+  div.style.background = hexToRgba(GEM_COLORS[g - 1], 0.12);
+
+  // Номер детали (показывает всегда)
+  const numEl = document.createElement('span');
+  numEl.className   = 'num';
+  numEl.textContent = g;
+  div.appendChild(numEl);
+
+  // Картинка (если загрузится)
+  const src = gemImgs[g - 1];
+  if (src) {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      if (div.isConnected) {
+        div.innerHTML = '';
+        div.appendChild(img);
+        const n = document.createElement('span');
+        n.className = 'num'; n.textContent = g;
+        div.appendChild(n);
+      }
+    };
+    img.onerror = () => {
+      if (div.isConnected && !div.querySelector('.emoji')) {
+        const em = document.createElement('span');
+        em.className = 'emoji';
+        em.textContent = ['⚙️','🔩','🔧','🛠️','⛏️','🔨','🪛','🪚','🔗','⚡','🧲','💎'][g - 1] || '⚙️';
+        div.insertBefore(em, div.firstChild);
+      }
+    };
+  }
+
+  return div;
+}
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function getCell(r, c) {
+  return boardEl.children[r * COLS + c] || null;
+}
+
+function updateCell(r, c) {
+  const old   = getCell(r, c);
+  const fresh = createCell(r, c);
+  if (old) boardEl.replaceChild(fresh, old);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POINTER / TOUCH EVENTS
+// ═══════════════════════════════════════════════════════════════
+let touchStart = null;
+let eventsAttached = false;
+
+function attachPointerEvents() {
+  if (eventsAttached) return;
+  eventsAttached = true;
+  boardEl.addEventListener('pointerdown', onPointerDown, { passive: false });
+  boardEl.addEventListener('pointermove', onPointerMove, { passive: false });
+  boardEl.addEventListener('pointerup',   onPointerUp,   { passive: false });
+}
+
+function cellFromPoint(x, y) {
+  const el   = document.elementFromPoint(x, y);
+  const cell = el && el.closest('.cell');
+  if (!cell) return null;
+  return { r: +cell.dataset.r, c: +cell.dataset.c };
+}
+
+function onPointerDown(e) {
+  if (busy) return;
+  e.preventDefault();
+  const pos = cellFromPoint(e.clientX, e.clientY);
+  if (!pos) return;
+  touchStart = pos;
+  selectCell(pos.r, pos.c);
+}
+
+function onPointerMove(e) {
+  if (!touchStart || busy) return;
+  e.preventDefault();
+}
+
+function onPointerUp(e) {
+  if (!touchStart || busy) return;
+  e.preventDefault();
+  const pos = cellFromPoint(e.clientX, e.clientY);
+  if (pos && (pos.r !== touchStart.r || pos.c !== touchStart.c)) {
+    const dr = pos.r - touchStart.r;
+    const dc = pos.c - touchStart.c;
+    const nr = touchStart.r + Math.sign(dr) * (Math.abs(dr) >= Math.abs(dc) ? 1 : 0);
+    const nc = touchStart.c + Math.sign(dc) * (Math.abs(dc) >  Math.abs(dr) ? 1 : 0);
+    if (isInBounds(nr, nc)) {
+      clearSelection();
+      trySwap(touchStart.r, touchStart.c, nr, nc);
+    }
+  }
+  touchStart = null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ВЫБОР И СВАП
+// ═══════════════════════════════════════════════════════════════
+function selectCell(r, c) {
+  if (selected) {
+    const { r: sr, c: sc } = selected;
+    if (sr === r && sc === c) { clearSelection(); return; }
+    if (isNeighbour(sr, sc, r, c)) {
+      clearSelection();
+      trySwap(sr, sc, r, c);
+      return;
+    }
+    clearSelection();
+  }
+  selected = { r, c };
+  const cell = getCell(r, c);
+  if (cell) cell.classList.add('selected');
+}
+
+function clearSelection() {
+  if (selected) {
+    const cell = getCell(selected.r, selected.c);
+    if (cell) cell.classList.remove('selected');
+  }
+  selected = null;
+}
+
+function isNeighbour(r1,c1,r2,c2) { return Math.abs(r1-r2)+Math.abs(c1-c2)===1; }
+function isInBounds(r,c) { return r>=0 && r<ROWS && c>=0 && c<COLS; }
+
+async function trySwap(r1,c1,r2,c2) {
+  busy = true;
+
+  // Проверяем валидность
+  swapData(r1,c1,r2,c2);
+  const valid = findMatches(board).length > 0;
+  swapData(r1,c1,r2,c2); // вернули как было
+
+  if (!valid) {
+    // Полный свап туда → обратно (показываем что не работает)
+    await animateSwap3D(r1,c1,r2,c2, /*revert=*/true);
+    busy = false;
+    return;
+  }
+
+  // Валидный: анимируем → меняем данные → обрабатываем матчи
+  await animateSwap3D(r1,c1,r2,c2, /*revert=*/false);
+  swapData(r1,c1,r2,c2);
+  updateCell(r1,c1);
+  updateCell(r2,c2);
+
+  await processMatches(1);
+  busy = false;
+  if (!hasValidMove(board)) noMovesEl.classList.add('visible');
+}
+
+function swapData(r1,c1,r2,c2) {
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ПСЕВДО-3D АНИМАЦИЯ СВАПА
+// ═══════════════════════════════════════════════════════════════
+async function animateSwap3D(r1,c1,r2,c2, revert) {
+  const cell1 = getCell(r1,c1);
+  const cell2 = getCell(r2,c2);
+  if (!cell1 || !cell2) return;
+
+  const rect1 = cell1.getBoundingClientRect();
+  const rect2 = cell2.getBoundingClientRect();
+
+  const fly1 = makeFlyingCard(cell1, rect1);
+  const fly2 = makeFlyingCard(cell2, rect2);
+  document.body.appendChild(fly1);
+  document.body.appendChild(fly2);
+
+  cell1.classList.add('swap-ghost');
+  cell2.classList.add('swap-ghost');
+
+  // Смещения для перелёта
+  const dx = rect2.left - rect1.left;
+  const dy = rect2.top  - rect1.top;
+  // Высота дуги — чуть вверх в середине пути
+  const arc = -Math.max(Math.abs(dx), Math.abs(dy)) * 0.30;
+
+  const T_LIFT = 100; // подъём
+  const T_MOVE = 200; // перелёт
+  const T_DROP = 90;  // опускание
+
+  const S   = 1.20;
+  const SH0 = '0 3px 8px #0005';
+  const SH1 = '0 12px 28px #000a, 0 0 0 2px #fff8';
+  const SH2 = '0 20px 40px #000c, 0 0 14px #fff3';
+
+  const ease = (name) => ({ easing: name });
+
+  // ── Фаза 1: оба поднимаются ──
+  await Promise.all([
+    fly1.animate([
+      { transform: `scale(1) translateZ(0px)`,  boxShadow: SH0 },
+      { transform: `scale(${S}) translateZ(22px)`, boxShadow: SH1 },
+    ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
+    fly2.animate([
+      { transform: `scale(1) translateZ(0px)`,  boxShadow: SH0 },
+      { transform: `scale(${S}) translateZ(22px)`, boxShadow: SH1 },
+    ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
+  ]);
+
+  // ── Фаза 2: летят к новым позициям ──
+  await Promise.all([
+    fly1.animate([
+      { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,           boxShadow: SH1 },
+      { transform: `scale(${S}) translateZ(30px) translate(${dx*.5}px,${dy*.5+arc}px)`, boxShadow: SH2, offset: 0.5 },
+      { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`,   boxShadow: SH1 },
+    ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
+    fly2.animate([
+      { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,              boxShadow: SH1 },
+      { transform: `scale(${S}) translateZ(30px) translate(${-dx*.5}px,${-dy*.5+arc}px)`, boxShadow: SH2, offset: 0.5 },
+      { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`,   boxShadow: SH1 },
+    ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
+  ]);
+
+  // ── Фаза 3: приземляются на НОВЫХ позициях ──
+  await Promise.all([
+    fly1.animate([
+      { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`,  boxShadow: SH1 },
+      { transform: `scale(1)   translateZ(0px)  translate(${dx}px,${dy}px)`,  boxShadow: SH0 },
+    ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
+    fly2.animate([
+      { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`, boxShadow: SH1 },
+      { transform: `scale(1)   translateZ(0px)  translate(${-dx}px,${-dy}px)`, boxShadow: SH0 },
+    ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
+  ]);
+
+  // Если невалидный ход — летят ОБРАТНО (те же 3 фазы в реверсе)
+  if (revert) {
+    // небольшая пауза чтобы игрок увидел позиции
+    await delay(60);
+
+    // подъём с новых позиций
+    await Promise.all([
+      fly1.animate([
+        { transform: `scale(1)   translateZ(0px)  translate(${dx}px,${dy}px)`,  boxShadow: SH0 },
+        { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`, boxShadow: SH1 },
+      ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
+      fly2.animate([
+        { transform: `scale(1)   translateZ(0px)  translate(${-dx}px,${-dy}px)`, boxShadow: SH0 },
+        { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`, boxShadow: SH1 },
+      ], { duration: T_LIFT, ...ease('ease-out'), fill: 'forwards' }).finished,
+    ]);
+
+    // летят обратно
+    await Promise.all([
+      fly1.animate([
+        { transform: `scale(${S}) translateZ(22px) translate(${dx}px,${dy}px)`,          boxShadow: SH1 },
+        { transform: `scale(${S}) translateZ(30px) translate(${dx*.5}px,${dy*.5+arc}px)`,boxShadow: SH2, offset: 0.5 },
+        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,                  boxShadow: SH1 },
+      ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
+      fly2.animate([
+        { transform: `scale(${S}) translateZ(22px) translate(${-dx}px,${-dy}px)`,           boxShadow: SH1 },
+        { transform: `scale(${S}) translateZ(30px) translate(${-dx*.5}px,${-dy*.5+arc}px)`, boxShadow: SH2, offset: 0.5 },
+        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`,                     boxShadow: SH1 },
+      ], { duration: T_MOVE, ...ease('ease-in-out'), fill: 'forwards' }).finished,
+    ]);
+
+    // опускаются на исходные позиции
+    await Promise.all([
+      fly1.animate([
+        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`, boxShadow: SH1 },
+        { transform: `scale(1)   translateZ(0px)  translate(0px,0px)`, boxShadow: SH0 },
+      ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
+      fly2.animate([
+        { transform: `scale(${S}) translateZ(22px) translate(0px,0px)`, boxShadow: SH1 },
+        { transform: `scale(1)   translateZ(0px)  translate(0px,0px)`, boxShadow: SH0 },
+      ], { duration: T_DROP, ...ease('ease-in'), fill: 'forwards' }).finished,
+    ]);
+  }
+
+  fly1.remove();
+  fly2.remove();
+  cell1.classList.remove('swap-ghost');
+  cell2.classList.remove('swap-ghost');
+}
+
+function makeFlyingCard(cell, rect) {
+  const fly = document.createElement('div');
+  const gemClass = [...cell.classList].find(cl => cl.startsWith('gem-')) || 'gem-1';
+  fly.className = `flying-card ${gemClass}`;
+  fly.style.cssText = `
+    left:${rect.left}px; top:${rect.top}px;
+    width:${rect.width}px; height:${rect.height}px;
+    background:${getComputedStyle(cell).backgroundColor};
+    border-radius:8px;
+    transform-origin:center center;
+  `;
+  fly.innerHTML = cell.innerHTML;
+  return fly;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// МАТЧИ И КАСКАДЫ
+// ═══════════════════════════════════════════════════════════════
+function findMatches(b) {
+  const matched = new Set();
+  // горизонталь
+  for (let r = 0; r < ROWS; r++) {
+    let run = 1;
+    for (let c = 1; c < COLS; c++) {
+      if (b[r][c] === b[r][c-1]) {
+        run++;
+        if (run === 3) { matched.add(`${r},${c-2}`); matched.add(`${r},${c-1}`); matched.add(`${r},${c}`); }
+        else if (run > 3) matched.add(`${r},${c}`);
+      } else run = 1;
+    }
+  }
+  // вертикаль
+  for (let c = 0; c < COLS; c++) {
+    let run = 1;
+    for (let r = 1; r < ROWS; r++) {
+      if (b[r][c] === b[r-1][c]) {
+        run++;
+        if (run === 3) { matched.add(`${r-2},${c}`); matched.add(`${r-1},${c}`); matched.add(`${r},${c}`); }
+        else if (run > 3) matched.add(`${r},${c}`);
+      } else run = 1;
+    }
+  }
+  return [...matched].map(k => { const [r,c] = k.split(','); return { r:+r, c:+c }; });
+}
+
+async function processMatches(combo) {
+  const matches = findMatches(board);
+  if (matches.length === 0) return;
+
+  score += matches.length * 10 * combo;
+  scoreEl.textContent = score;
+  if (combo > 1) showCombo(combo);
+
+  for (const { r,c } of matches) {
+    const cell = getCell(r,c);
+    if (cell) cell.classList.add('matched');
+    board[r][c] = 0;
+  }
+  await delay(320);
+
+  applyGravity();
+  fillBoard();
+  renderBoardAnimated();
+  await delay(290);
+
+  await processMatches(combo + 1);
+}
+
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    let empty = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][c] !== 0) { board[empty][c] = board[r][c]; if (empty!==r) board[r][c]=0; empty--; }
+    }
+    while (empty >= 0) { board[empty][c] = 0; empty--; }
+  }
+}
+
+function fillBoard() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] === 0) board[r][c] = randomGem();
+}
+
+function renderBoardAnimated() {
+  boardEl.innerHTML = '';
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      const cell = createCell(r,c);
+      cell.classList.add('fall-in');
+      boardEl.appendChild(cell);
+    }
+  // НЕ вызываем attachPointerEvents — слушатели уже висят на boardEl
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ПРОВЕРКА ХОДОВ
+// ═══════════════════════════════════════════════════════════════
+function hasValidMove(b) {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (c+1 < COLS) { const cp=deepCopy(b); [cp[r][c],cp[r][c+1]]=[cp[r][c+1],cp[r][c]]; if (findMatches(cp).length>0) return true; }
+      if (r+1 < ROWS) { const cp=deepCopy(b); [cp[r][c],cp[r+1][c]]=[cp[r+1][c],cp[r][c]]; if (findMatches(cp).length>0) return true; }
+    }
+  }
+  return false;
+}
+
+function deepCopy(b) { return b.map(row => [...row]); }
+
+// ═══════════════════════════════════════════════════════════════
+// ПЕРЕМЕШИВАНИЕ
+// ═══════════════════════════════════════════════════════════════
+function shuffleBoard() {
+  noMovesEl.classList.remove('visible');
+  do {
+    for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c]=randomGem();
+  } while (findMatches(board).length>0 || !hasValidMove(board));
+  renderBoard();
+  busy = false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// УТИЛИТЫ
+// ═══════════════════════════════════════════════════════════════
+function showCombo(level) {
+  comboBanner.textContent = `КОМБО ×${level} 🔥`;
+  comboBanner.classList.add('show');
+  setTimeout(() => comboBanner.classList.remove('show'), 950);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Старт ──
+init();
+</script>
+</body>
+</html>
