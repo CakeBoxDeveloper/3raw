@@ -51,14 +51,33 @@ body {
 
 /* ══ Header ═════════════════════════════════════════════════════ */
 .hdr {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   margin-bottom: 6px;
   flex-shrink: 0;
-  gap: 10px;
 }
+/* таймер — левая колонка */
+.move-timer-wrap {
+  justify-self: start;
+}
+/* подсказка — строго по центру */
+.hint-control {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.hint-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+/* счёт — правая колонка */
 .score-block {
+  justify-self: end;
   text-align: right;
   line-height: 1;
   flex-shrink: 0;
@@ -129,20 +148,7 @@ body {
 .ring-val.warn { color: var(--danger); }
 
 /* hint toggle */
-.hint-control {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-}
-.hint-label {
-  font-size: 0.48rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-.toggle { position: relative; width: 30px; height: 16px; flex-shrink: 0; }
+.toggle { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
 .toggle input { opacity: 0; width: 0; height: 0; }
 .toggle-track {
   position: absolute; inset: 0;
@@ -155,14 +161,14 @@ body {
 .toggle-track::before {
   content: '';
   position: absolute;
-  width: 10px; height: 10px;
-  left: 2px; top: 2px;
+  width: 14px; height: 14px;
+  left: 3px; top: 3px;
   background: var(--text-dim);
   border-radius: 50%;
   transition: transform 0.2s, background 0.2s;
 }
 .toggle input:checked + .toggle-track { background: var(--accent-lo); border-color: var(--accent); }
-.toggle input:checked + .toggle-track::before { transform: translateX(14px); background: var(--accent); }
+.toggle input:checked + .toggle-track::before { transform: translateX(20px); background: var(--accent); }
 
 /* ══ Board ══════════════════════════════════════════════════════ */
 .board-wrap {
@@ -354,7 +360,7 @@ body {
 }
 
 .order-preview {
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   border-radius: var(--r);
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -362,15 +368,15 @@ body {
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   position: relative;
-  z-index: 2;   /* превью поверх заливки — без инверсии */
+  z-index: 2;
 }
 .order-preview img {
-  width: 80%; height: 80%;
+  width: 88%; height: 88%;
   object-fit: contain;
   filter: brightness(1.5) contrast(1.05);
 }
 .order-preview .fb {
-  font-size: 0.85rem; font-weight: 700; font-family: monospace;
+  font-size: 1.1rem; font-weight: 700; font-family: monospace;
 }
 
 /* Режим отдыха */
@@ -478,6 +484,64 @@ body {
 }
 .modal-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 .modal-sub   { font-size: 0.68rem; color: var(--text-dim); line-height: 1.5; margin-top: -8px; }
+
+/* ── Preview modal ── */
+.preview-box {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 24px;
+  width: min(320px, 88vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.preview-img-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.preview-img-wrap img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  filter: brightness(1.7) contrast(1.08);
+}
+.preview-img-wrap .fb {
+  font-size: 4rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+.preview-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  text-align: center;
+  word-break: break-all;
+}
+.preview-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 28px; height: 28px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  font-family: inherit;
+}
+.preview-close:hover { color: var(--text); border-color: var(--border-hi); }
 .btn-primary {
   padding: 10px; background: var(--accent); color: #0c0c10;
   border: none; border-radius: var(--r);
@@ -509,8 +573,9 @@ footer {
     </div>
 
     <div class="hint-control">
+      <span class="hint-label">Подсказка</span>
       <label class="toggle">
-        <input type="checkbox" id="hint-toggle" checked onchange="onHintToggle()">
+        <input type="checkbox" id="hint-toggle" onchange="onHintToggle()">
         <span class="toggle-track"></span>
       </label>
     </div>
@@ -564,6 +629,15 @@ footer {
   </div>
 </div>
 
+<!-- Preview modal -->
+<div class="modal-bg" id="preview-modal" onclick="closePreview()">
+  <div class="preview-box" onclick="event.stopPropagation()">
+    <div class="preview-img-wrap" id="preview-img-wrap"></div>
+    <div class="preview-name" id="preview-name"></div>
+    <button class="preview-close" onclick="closePreview()">✕</button>
+  </div>
+</div>
+
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════════════
@@ -606,7 +680,7 @@ const ALL_IMGS = [
 ];
 const GEM_COLORS   = ['#e05252','#4a9ede','#4ecc7a','#e8a830','#a86cd4','#30c4a8','#e8407a','#e87830','#30bcd8','#e84040','#6878d0','#68c870'];
 const GEM_FALLBACK = ['A','B','C','D','E','F','G','H','I','J','K','L'];
-const HINT_IDLE_MS = 4000;
+const HINT_IDLE_MS = 10000;  // 10 сек бездействия
 
 // ═══════════════════════════════════════════════════════════════
 //  СОСТОЯНИЕ
@@ -635,7 +709,7 @@ let restLeft      = 0;
 let restInt       = null;
 
 // Подсказка
-let hintEnabled  = true;
+let hintEnabled  = false;  // по умолчанию выключена
 let hintTimer    = null;
 
 // ══ DOM ══════════════════════════════════════════════════════════
@@ -795,9 +869,9 @@ function renderOrderBar() {
     orderBarEl.innerHTML = `
       <div class="order-fill-bg" id="order-fill-bg" style="width:${pctRest}%"></div>
       <div class="order-content">
-        <div class="order-text-wrap" style="justify-content:center;">
-          <span class="order-name" style="color:#0c0c10;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;">Перерыв — следующий заказ через</span>
-          <span class="order-count" style="color:#0c0c10;font-size:1.1rem;font-weight:700;">${restLeft}</span>
+        <div class="order-text-wrap" style="justify-content:center;gap:6px;">
+          <span style="font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#0c0c10;">Перерыв — следующий заказ через</span>
+          <span style="font-size:0.72rem;font-weight:700;color:#0c0c10;font-variant-numeric:tabular-nums;">${restLeft}</span>
         </div>
       </div>`;
     return;
@@ -816,8 +890,11 @@ function renderOrderBar() {
       </div>
     </div>`;
 
-  // превью
+  // превью — кликабельное
   const preview = document.getElementById('order-preview');
+  preview.style.cursor = 'pointer';
+  preview.title = 'Нажми чтобы рассмотреть';
+  preview.onclick = () => openPreview(orderGem);
   if (img) {
     const im = new Image(); im.src = img;
     im.onload = () => { preview.innerHTML = ''; preview.appendChild(im); };
@@ -1111,7 +1188,12 @@ function fillBoard() {
 // ═══════════════════════════════════════════════════════════════
 function onHintToggle() {
   hintEnabled = document.getElementById('hint-toggle').checked;
-  if (!hintEnabled) hideHint(); else resetHintTimer();
+  if (!hintEnabled) {
+    hideHint();
+  } else {
+    // Сразу показываем подсказку, потом таймер 10с при бездействии
+    showHint();
+  }
 }
 function resetHintTimer() {
   hideHint();
@@ -1123,7 +1205,11 @@ function hideHint() {
   boardEl.querySelectorAll('.cell.hint').forEach(c => c.classList.remove('hint'));
 }
 function showHint() {
-  if (!hintEnabled || busy) { resetHintTimer(); return; }
+  if (!hintEnabled || busy) { return; }
+  if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+  // Снимаем старую подсказку
+  boardEl.querySelectorAll('.cell.hint').forEach(c => c.classList.remove('hint'));
+  // Ищем первый валидный ход
   for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
     if (c+1<COLS) { const cp=deepCopy(board);[cp[r][c],cp[r][c+1]]=[cp[r][c+1],cp[r][c]];if(findMatches(cp).length>0){applyHint(r,c,r,c+1);return;} }
     if (r+1<ROWS) { const cp=deepCopy(board);[cp[r][c],cp[r+1][c]]=[cp[r+1][c],cp[r][c]];if(findMatches(cp).length>0){applyHint(r,c,r+1,c);return;} }
@@ -1132,6 +1218,9 @@ function showHint() {
 function applyHint(r1,c1,r2,c2) {
   getCell(r1,c1)?.classList.add('hint');
   getCell(r2,c2)?.classList.add('hint');
+  // Через 10с — следующая подсказка при бездействии
+  if (hintTimer) clearTimeout(hintTimer);
+  hintTimer = setTimeout(showHint, HINT_IDLE_MS);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1247,6 +1336,40 @@ showGemToast._t = null;
 //  УТИЛИТЫ
 // ═══════════════════════════════════════════════════════════════
 function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ═══════════════════════════════════════════════════════════════
+//  PREVIEW MODAL
+// ═══════════════════════════════════════════════════════════════
+function openPreview(gemIdx) {
+  const modal   = document.getElementById('preview-modal');
+  const imgWrap = document.getElementById('preview-img-wrap');
+  const nameEl  = document.getElementById('preview-name');
+
+  const src  = gemImgs[gemIdx - 1];
+  const name = ALL_IMGS[gemIdx - 1]?.replace('.png', '') ?? `Тип ${gemIdx}`;
+
+  imgWrap.innerHTML = '';
+  nameEl.textContent = name;
+
+  if (src) {
+    const im = new Image();
+    im.src = src;
+    im.onload = () => { imgWrap.innerHTML = ''; imgWrap.appendChild(im); };
+    im.onerror = () => {
+      imgWrap.innerHTML = `<span class="fb" style="color:${GEM_COLORS[gemIdx-1]}">${GEM_FALLBACK[gemIdx-1]}</span>`;
+    };
+    // показываем пока грузится
+    imgWrap.appendChild(im);
+  } else {
+    imgWrap.innerHTML = `<span class="fb" style="color:${GEM_COLORS[gemIdx-1]}">${GEM_FALLBACK[gemIdx-1]}</span>`;
+  }
+
+  modal.classList.add('visible');
+}
+
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('visible');
+}
 
 // ── Старт ──
 init();
