@@ -665,19 +665,12 @@ const ORDER_MAX = 40;
 const REST_TIME = 30;
 
 const IMG_PATH = './textures/';
-const ALL_IMGS = [
-  '494858501.png','677190411.png','909212541.png','946006281.png',
-  '1023327801.png','1350318051.png','1593794351.png','2489211861.png',
-  '2550003631.png','2638402031.png','2899937651.png','3241715591.png',
-  '3494283921.png','3503704291.png','3858232881.png','4062681351.png',
-  '4469738251.png','4921273661.png','5059758041.png','5081440011.png',
-  '5084435091.png','5145193431.png','5147000371.png','5570842761.png',
-  '5750286311.png','5753922651.png','5754108431.png','5825793581.png',
-  '6156501671.png','6186879891.png','6745924971.png','6938101851.png',
-  '7120636581.png','7347299641.png','8074461121.png','8355742941.png',
-  '8519968641.png','8540916931.png','8601853291.png','8628014011.png',
-  '9186094931.png','9312965381.png',
-];
+
+// ALL_IMGS и ALL_NAMES загружаются из gem_names.json (создан extract_names.py)
+// Формат: { "название детали": "файл.png", ... }
+let ALL_IMGS  = [];   // ['файл.png', ...]  — пути к текстурам
+let ALL_NAMES = [];   // ['название', ...]  — человекочитаемые имена
+
 const GEM_COLORS   = ['#e05252','#4a9ede','#4ecc7a','#e8a830','#a86cd4','#30c4a8','#e8407a','#e87830','#30bcd8','#e84040','#6878d0','#68c870'];
 const GEM_FALLBACK = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 const HINT_IDLE_MS = 10000;  // 10 сек бездействия
@@ -752,6 +745,7 @@ function init() {
 }
 
 function refreshGemImgs() {
+  // Берём первые GEM_TYPES записей. IMG_PATH уже включён в значение JSON.
   gemImgs = ALL_IMGS.slice(0, GEM_TYPES).map(f => IMG_PATH + f);
 }
 
@@ -834,11 +828,11 @@ function onOrderComplete() {
   ordersCompleted++;
 
   // Каждый 5-й заказ — новая деталь в пул
-  if (ordersCompleted % 5 === 0 && GEM_TYPES < POOL_MAX) {
+  if (ordersCompleted % 5 === 0 && GEM_TYPES < Math.min(POOL_MAX, ALL_IMGS.length)) {
     GEM_TYPES++;
     refreshGemImgs();
     // Пересчитываем таймер с учётом нового пула
-    const newName = ALL_IMGS[GEM_TYPES - 1]?.replace('.png', '') ?? `Тип ${GEM_TYPES}`;
+    const newName = ALL_NAMES[GEM_TYPES - 1] ?? `Деталь ${GEM_TYPES}`;
     showGemToast(newName);
   }
 
@@ -879,7 +873,7 @@ function renderOrderBar() {
 
   // Активный заказ — без прогрессбара, чистая плашка
   const img  = gemImgs[orderGem - 1];
-  const name = ALL_IMGS[orderGem - 1]?.replace('.png', '') ?? `Тип ${orderGem}`;
+  const name = ALL_NAMES[orderGem - 1] ?? `Деталь ${orderGem}`;
 
   orderBarEl.innerHTML = `
     <div class="order-content">
@@ -1346,7 +1340,7 @@ function openPreview(gemIdx) {
   const nameEl  = document.getElementById('preview-name');
 
   const src  = gemImgs[gemIdx - 1];
-  const name = ALL_IMGS[gemIdx - 1]?.replace('.png', '') ?? `Тип ${gemIdx}`;
+  const name = ALL_NAMES[gemIdx - 1] ?? `Деталь ${gemIdx}`;
 
   imgWrap.innerHTML = '';
   nameEl.textContent = name;
@@ -1372,7 +1366,29 @@ function closePreview() {
 }
 
 // ── Старт ──
-init();
+// Грузим gem_names.json, потом запускаем игру
+fetch('./gem_names.json')
+  .then(r => r.json())
+  .then(data => {
+    // Перемешиваем детали случайно чтобы каждая игра была разной
+    const entries = Object.entries(data);
+    for (let i = entries.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [entries[i], entries[j]] = [entries[j], entries[i]];
+    }
+    ALL_NAMES = entries.map(([name]) => name);
+    ALL_IMGS  = entries.map(([, file]) => file);
+    // POOL_MAX не больше реального числа деталей
+    Object.defineProperty(window, '_POOL_MAX_REAL', { value: Math.min(POOL_MAX, ALL_IMGS.length) });
+    init();
+  })
+  .catch(() => {
+    // Если JSON не загрузился — фоллбэк на пустые имена
+    console.warn('gem_names.json не найден — детали без имён');
+    ALL_NAMES = Array.from({ length: 42 }, (_, i) => `Деталь ${i+1}`);
+    ALL_IMGS  = [];
+    init();
+  });
 </script>
 </body>
 </html>
